@@ -1,0 +1,3042 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIRVAAN — Quit Smoking Life Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Hind+Siliguri:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- Firebase v10 SDK (compat mode for easy use) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+/* ── ROOT ── */
+:root {
+  --bg: #050508;
+  --bg2: #0b0b12;
+  --bg3: #101018;
+  --card: #13131e;
+  --card2: #191926;
+  --border: rgba(255,255,255,0.06);
+  --border-gold: rgba(212,175,55,0.3);
+  --border-green: rgba(0,230,118,0.3);
+  --gold: #D4AF37;
+  --gold2: #f0d060;
+  --green: #00E676;
+  --green2: #69F0AE;
+  --red: #FF5252;
+  --blue: #40C4FF;
+  --white: #F0F0F8;
+  --muted: #5a5a78;
+  --muted2: #3a3a55;
+  --glow-gold: rgba(212,175,55,0.15);
+  --glow-green: rgba(0,230,118,0.15);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'Hind Siliguri',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* NOISE OVERLAY */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;opacity:0.4;
+}
+
+/* SCREENS */
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* ═══════════════════════════════
+   AUTH SCREEN
+═══════════════════════════════ */
+#screen-auth{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212,175,55,0.1) 0%, transparent 60%),
+    var(--bg);
+}
+#screen-auth.active{display:flex;}
+
+.auth-wrap{width:100%;max-width:420px;text-align:center;}
+
+.auth-logo{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  margin-bottom:32px;
+}
+.auth-logo-mark{
+  width:52px;height:52px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+  box-shadow:0 0 30px rgba(212,175,55,0.4);
+}
+.auth-logo-text{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2.5rem;letter-spacing:4px;
+  background:linear-gradient(90deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.auth-tagline{
+  font-size:0.82rem;color:var(--muted);
+  margin-bottom:40px;line-height:1.6;
+  letter-spacing:0.5px;
+}
+
+.auth-card{
+  background:var(--card);
+  border:1px solid var(--border-gold);
+  border-radius:24px;
+  padding:32px 28px;
+  margin-bottom:16px;
+}
+.auth-tab-row{
+  display:flex;
+  background:var(--bg3);
+  border-radius:12px;
+  padding:4px;
+  margin-bottom:28px;
+  gap:4px;
+}
+.auth-tab{
+  flex:1;padding:10px;
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:0.85rem;font-weight:600;
+  border:none;border-radius:10px;
+  cursor:pointer;transition:all 0.2s;
+  background:none;color:var(--muted);
+}
+.auth-tab.active{
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#000;
+}
+.auth-form{display:none;}
+.auth-form.active{display:block;}
+.auth-input{
+  width:100%;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+  color:var(--white);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:0.95rem;
+  outline:none;
+  margin-bottom:12px;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.auth-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow-gold);}
+.auth-btn{
+  width:100%;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none;border-radius:12px;
+  padding:15px;
+  color:#000;
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:1rem;font-weight:700;
+  cursor:pointer;transition:all 0.2s;
+  margin-bottom:12px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.auth-btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(212,175,55,0.35);}
+.auth-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.auth-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:16px 0;
+  font-size:0.75rem;color:var(--muted);
+}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.google-btn{
+  width:100%;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:13px;
+  color:var(--white);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:0.9rem;font-weight:600;
+  cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.google-btn:hover{border-color:var(--gold);background:rgba(212,175,55,0.05);}
+.auth-error{
+  background:rgba(255,82,82,0.1);
+  border:1px solid rgba(255,82,82,0.3);
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:0.8rem;color:var(--red);
+  margin-bottom:12px;
+  display:none;
+}
+.auth-success{
+  background:rgba(0,230,118,0.1);
+  border:1px solid var(--border-green);
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:0.8rem;color:var(--green);
+  margin-bottom:12px;
+  display:none;
+}
+
+/* Auth loading spinner */
+.auth-loading{
+  display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;
+  background:var(--bg);
+  position:fixed;inset:0;z-index:9998;
+}
+.auth-loading.show{display:flex;}
+.spinner{
+  width:48px;height:48px;
+  border:3px solid var(--muted2);
+  border-top-color:var(--gold);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  margin-bottom:16px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-text{font-size:0.85rem;color:var(--muted);}
+
+/* ═══════════════════════════════
+   ONBOARDING
+═══════════════════════════════ */
+#screen-onboard{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212,175,55,0.12) 0%, transparent 60%),
+    var(--bg);
+}
+#screen-onboard.active{display:flex;}
+
+.ob-wrap{width:100%;max-width:460px;}
+
+.ob-logo{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:40px;
+}
+.ob-logo-mark{
+  width:48px;height:48px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  box-shadow:0 0 30px rgba(212,175,55,0.4);
+}
+.ob-logo-text{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2.2rem;
+  letter-spacing:3px;
+  background:linear-gradient(90deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.ob-logo-sub{
+  font-size:0.7rem;color:var(--muted);
+  letter-spacing:2px;text-transform:uppercase;
+  margin-left:60px;margin-top:-8px;
+}
+
+.ob-headline{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.5rem,8vw,4.5rem);
+  line-height:0.95;
+  margin-bottom:12px;
+}
+.ob-headline span{color:var(--gold);}
+
+.ob-sub{
+  font-size:0.95rem;color:var(--muted);
+  margin-bottom:36px;line-height:1.6;
+}
+
+.ob-step{
+  display:none;
+}
+.ob-step.active{display:block;animation:slideUp 0.4s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.ob-step-label{
+  font-size:0.65rem;letter-spacing:3px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:24px;
+  display:flex;align-items:center;gap:8px;
+}
+.ob-step-label::after{content:'';flex:1;height:1px;background:var(--border-gold);}
+
+.input-group{margin-bottom:18px;}
+.input-label{
+  font-size:0.8rem;color:var(--muted);
+  margin-bottom:8px;display:block;
+}
+.ob-input{
+  width:100%;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+  color:var(--white);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:1rem;
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.ob-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow-gold);}
+
+.ob-progress{
+  display:flex;gap:6px;margin-bottom:32px;
+}
+.ob-dot{
+  height:3px;flex:1;
+  background:var(--muted2);
+  border-radius:2px;
+  transition:background 0.3s;
+}
+.ob-dot.active{background:var(--gold);}
+
+.btn-next{
+  width:100%;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none;border-radius:12px;
+  padding:16px;
+  color:#000;
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:1rem;font-weight:700;
+  cursor:pointer;
+  transition:transform 0.2s,box-shadow 0.3s;
+}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(212,175,55,0.4);}
+
+.btn-back{
+  background:none;border:1px solid var(--border);
+  border-radius:12px;padding:12px 24px;
+  color:var(--muted);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:0.9rem;cursor:pointer;
+  margin-right:10px;
+  transition:border-color 0.2s;
+}
+.btn-back:hover{border-color:var(--muted);}
+
+/* ═══════════════════════════════
+   MAIN APP
+═══════════════════════════════ */
+#screen-app{padding:0 0 80px;}
+
+/* TOP NAV */
+.navbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(5,5,8,0.9);
+  backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+  padding:0 20px;
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.nav-brand{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.4rem;letter-spacing:3px;
+  color:var(--gold);
+}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-streak{
+  display:flex;align-items:center;gap:6px;
+  background:var(--card);
+  border:1px solid var(--border-gold);
+  border-radius:50px;
+  padding:5px 12px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.8rem;
+  color:var(--gold);font-weight:700;
+}
+.nav-level{
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border-radius:50px;
+  padding:5px 12px;
+  font-size:0.7rem;font-weight:700;
+  color:#000;letter-spacing:1px;
+  text-transform:uppercase;
+}
+
+/* PAGE SECTIONS */
+.page-wrap{max-width:680px;margin:0 auto;padding:0 16px;}
+
+/* ── HERO TIMER ── */
+.hero{
+  padding:32px 16px 0;
+  max-width:680px;margin:0 auto;
+  text-align:center;
+}
+.hero-eyebrow{
+  font-size:0.65rem;letter-spacing:4px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;
+}
+.hero-quote{
+  font-size:clamp(0.9rem,2.5vw,1.1rem);
+  color:var(--gold2);
+  font-style:italic;
+  margin-bottom:32px;
+  line-height:1.5;
+}
+
+.timer-block{
+  background:var(--card);
+  border:1px solid var(--border-gold);
+  border-radius:24px;
+  padding:32px 16px;
+  margin-bottom:4px;
+  position:relative;
+  overflow:hidden;
+}
+.timer-block::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.timer-block::after{
+  content:'SMOKE FREE';
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:8rem;
+  color:rgba(212,175,55,0.03);
+  pointer-events:none;
+  white-space:nowrap;
+  letter-spacing:8px;
+}
+
+.timer-row{
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.t-unit{text-align:center;min-width:56px;}
+.t-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3rem,9vw,5.5rem);
+  color:var(--gold);
+  line-height:1;
+  display:block;
+  text-shadow:0 0 40px rgba(212,175,55,0.5);
+}
+.t-num.pulse{animation:numPulse 0.4s ease;}
+@keyframes numPulse{0%{transform:scale(1.15);color:var(--green)}100%{transform:scale(1);color:var(--gold)}}
+.t-label{
+  font-size:0.55rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-top:4px;
+}
+.t-sep{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.5rem,7vw,4.5rem);
+  color:var(--muted2);
+  line-height:1;
+  margin-bottom:8px;
+}
+
+.ms-bar{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:16px;
+}
+.ms-label{font-size:0.65rem;color:var(--muted);letter-spacing:2px;}
+.ms-val{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.75rem;color:var(--green);
+  min-width:36px;
+}
+.ms-track{
+  flex:1;max-width:200px;
+  height:2px;background:var(--muted2);
+  border-radius:1px;overflow:hidden;
+}
+.ms-fill{
+  height:100%;background:var(--green);
+  border-radius:1px;
+  transition:width 0.05s linear;
+}
+
+/* ── STATS ROW ── */
+.stats-row{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  padding:16px 16px 0;
+  max-width:680px;margin:0 auto;
+}
+@media(min-width:500px){.stats-row{grid-template-columns:repeat(4,1fr);}}
+
+.stat-tile{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px 12px;
+  text-align:center;
+  transition:border-color 0.3s,transform 0.2s;
+}
+.stat-tile:hover{transform:translateY(-2px);}
+.stat-tile.green-tile{border-color:var(--border-green);}
+.stat-tile.gold-tile{border-color:var(--border-gold);}
+.st-icon{font-size:20px;margin-bottom:6px;}
+.st-val{
+  font-family:'JetBrains Mono',monospace;
+  font-size:1.1rem;font-weight:700;
+  color:var(--white);
+}
+.st-val.green{color:var(--green);}
+.st-val.gold{color:var(--gold);}
+.st-label{font-size:0.65rem;color:var(--muted);margin-top:3px;}
+
+/* ── SECTION LAYOUT ── */
+.section{padding:24px 16px 0;max-width:680px;margin:0 auto;}
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.section-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.3rem;letter-spacing:2px;
+  color:var(--white);
+}
+.section-title span{color:var(--gold);}
+.section-badge{
+  font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;
+  color:var(--green);
+  background:rgba(0,230,118,0.1);
+  border:1px solid var(--border-green);
+  border-radius:50px;
+  padding:3px 10px;
+}
+
+/* ── SOS CRAVING ── */
+.sos-trigger{
+  background:linear-gradient(135deg,#1a0808,#2a0a0a);
+  border:1px solid rgba(255,82,82,0.4);
+  border-radius:20px;
+  padding:20px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.3s;
+  margin-bottom:0;
+  position:relative;
+  overflow:hidden;
+}
+.sos-trigger::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at center,rgba(255,82,82,0.1),transparent 70%);
+}
+.sos-trigger:hover{
+  border-color:rgba(255,82,82,0.7);
+  box-shadow:0 0 40px rgba(255,82,82,0.2);
+}
+.sos-icon{font-size:28px;margin-bottom:8px;}
+.sos-text{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.4rem;letter-spacing:3px;
+  color:var(--red);
+}
+.sos-sub{font-size:0.75rem;color:var(--muted);margin-top:4px;}
+
+.sos-panel{
+  display:none;
+  background:var(--card);
+  border:1px solid rgba(255,82,82,0.2);
+  border-top:none;
+  border-radius:0 0 20px 20px;
+  overflow:hidden;
+}
+.sos-panel.open{display:block;animation:slideDown 0.3s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+.sos-tabs{
+  display:flex;
+  border-bottom:1px solid var(--border);
+}
+.sos-tab{
+  flex:1;padding:12px;
+  font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);
+  background:none;border:none;cursor:pointer;
+  transition:all 0.2s;
+  font-family:'Hind Siliguri',sans-serif;
+}
+.sos-tab.active{color:var(--red);border-bottom:2px solid var(--red);}
+
+.sos-content{padding:20px;}
+.sos-pane{display:none;}
+.sos-pane.active{display:block;}
+
+/* BREATHING */
+.breath-wrap{text-align:center;padding:10px 0;}
+.breath-ring{
+  width:120px;height:120px;
+  border-radius:50%;
+  border:2px solid var(--blue);
+  margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  position:relative;
+  transition:all 0.1s;
+  box-shadow:0 0 20px rgba(64,196,255,0.2);
+}
+.breath-ring-pulse{
+  position:absolute;inset:0;
+  border-radius:50%;
+  border:2px solid var(--blue);
+  animation:none;
+}
+.breath-ring.inhale .breath-ring-pulse{animation:breathExpand 4s ease-in forwards;}
+.breath-ring.exhale .breath-ring-pulse{animation:breathContract 8s ease-out forwards;}
+@keyframes breathExpand{to{transform:scale(1.5);opacity:0;}}
+@keyframes breathContract{from{transform:scale(1.5);opacity:0;}to{transform:scale(1);opacity:1;}}
+.breath-inner{font-size:0.75rem;color:var(--blue);text-align:center;line-height:1.4;}
+.breath-phase{
+  font-family:'Bebas Neue',sans-serif;font-size:1.2rem;
+  color:var(--blue);letter-spacing:2px;
+  margin-bottom:8px;
+}
+.breath-timer-bar{
+  width:100%;height:4px;background:var(--muted2);
+  border-radius:2px;overflow:hidden;margin-top:16px;
+}
+.breath-timer-fill{
+  height:100%;background:var(--blue);
+  border-radius:2px;transition:none;
+}
+
+/* DISTRACTION */
+.distraction-list{display:flex;flex-direction:column;gap:8px;}
+.distract-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px 14px;
+  cursor:pointer;
+  transition:all 0.2s;
+  font-size:0.85rem;
+}
+.distract-item:hover{border-color:var(--green);background:rgba(0,230,118,0.05);}
+.distract-icon{font-size:20px;min-width:24px;}
+
+/* CRAVING LOG */
+.craving-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.craving-btn{
+  padding:12px;border-radius:12px;border:1px solid;
+  font-family:'Hind Siliguri',sans-serif;font-size:0.85rem;
+  cursor:pointer;transition:all 0.2s;font-weight:600;
+}
+.craving-btn.won{background:rgba(0,230,118,0.1);border-color:var(--border-green);color:var(--green);}
+.craving-btn.lost{background:rgba(255,82,82,0.08);border-color:rgba(255,82,82,0.3);color:var(--red);}
+.craving-btn:hover{transform:scale(1.02);}
+.craving-count{
+  text-align:center;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:3rem;color:var(--green);
+  text-shadow:0 0 30px rgba(0,230,118,0.4);
+}
+.craving-sub{text-align:center;font-size:0.75rem;color:var(--muted);}
+
+/* ── MILESTONES ── */
+.milestone-list{display:flex;flex-direction:column;gap:10px;}
+.ms-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:14px 16px;
+  display:flex;align-items:center;gap:14px;
+  transition:all 0.3s;
+}
+.ms-card.unlocked{
+  border-color:var(--border-gold);
+  background:linear-gradient(135deg,rgba(212,175,55,0.07),var(--card));
+}
+.ms-card.next-ms{
+  border-color:rgba(255,255,255,0.15);
+  animation:nextGlow 2s ease-in-out infinite;
+}
+@keyframes nextGlow{
+  0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,0.2)}
+  50%{box-shadow:0 0 0 4px rgba(212,175,55,0.0)}
+}
+.ms-ico{font-size:26px;min-width:32px;text-align:center;}
+.ms-body{flex:1;}
+.ms-name{font-size:0.9rem;font-weight:700;margin-bottom:2px;}
+.ms-desc{font-size:0.72rem;color:var(--muted);}
+.ms-prog{
+  width:100%;height:3px;
+  background:var(--muted2);
+  border-radius:2px;margin-top:8px;overflow:hidden;
+}
+.ms-prog-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--gold),var(--gold2));
+  border-radius:2px;
+  transition:width 1s ease;
+}
+.ms-status{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.65rem;
+  padding:4px 8px;border-radius:50px;
+  font-weight:700;white-space:nowrap;
+}
+.ms-status.done{background:rgba(212,175,55,0.15);color:var(--gold);}
+.ms-status.waiting{background:rgba(90,90,120,0.3);color:var(--muted);}
+.ms-status.next{background:rgba(255,255,255,0.05);color:var(--white);}
+
+/* ── GAMIFICATION / LEVELS ── */
+.level-bar-card{
+  background:var(--card);
+  border:1px solid var(--border-gold);
+  border-radius:20px;
+  padding:20px;
+  margin-bottom:12px;
+}
+.level-info{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.level-name{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.8rem;letter-spacing:2px;color:var(--gold);
+}
+.level-pts{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.8rem;color:var(--muted);
+}
+.level-track{
+  height:8px;background:var(--muted2);
+  border-radius:4px;overflow:hidden;
+}
+.level-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--gold),var(--gold2));
+  border-radius:4px;transition:width 1s ease;
+}
+
+.badges-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:8px;
+}
+.badge-item{
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 6px;
+  text-align:center;
+  transition:all 0.2s;
+}
+.badge-item.earned{
+  border-color:var(--border-gold);
+  background:linear-gradient(135deg,rgba(212,175,55,0.1),var(--card2));
+}
+.badge-item.locked{opacity:0.35;filter:grayscale(1);}
+.badge-icon{font-size:28px;margin-bottom:5px;}
+.badge-name{font-size:0.55rem;color:var(--muted);line-height:1.3;}
+.badge-pts{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.6rem;color:var(--gold);font-weight:700;margin-top:2px;
+}
+
+/* ── HEALTH TIMELINE ── */
+.health-items{display:flex;flex-direction:column;gap:0;}
+.health-row{
+  display:flex;gap:0;
+  position:relative;
+}
+.health-row::before{
+  content:'';
+  position:absolute;
+  left:11px;top:22px;bottom:-12px;
+  width:1px;background:var(--border);
+}
+.health-row:last-child::before{display:none;}
+.health-dot{
+  width:24px;height:24px;
+  border-radius:50%;
+  background:var(--muted2);
+  border:2px solid var(--border);
+  flex-shrink:0;
+  margin-top:12px;
+  z-index:1;
+  transition:all 0.4s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;
+}
+.health-row.healed .health-dot{
+  background:var(--green);
+  border-color:var(--green);
+  box-shadow:0 0 10px rgba(0,230,118,0.5);
+}
+.health-body{
+  flex:1;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px;
+  margin-left:12px;
+  margin-bottom:10px;
+  transition:border-color 0.4s;
+}
+.health-row.healed .health-body{border-color:var(--border-green);}
+.health-time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.65rem;color:var(--gold);
+  margin-bottom:3px;
+}
+.health-title{font-size:0.85rem;font-weight:700;margin-bottom:2px;}
+.health-desc{font-size:0.72rem;color:var(--muted);line-height:1.5;}
+
+/* ── ROUTINE PLANNER ── */
+.routine-sections{display:flex;flex-direction:column;gap:12px;}
+.routine-block{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  overflow:hidden;
+}
+.routine-block-header{
+  padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+}
+.routine-block-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:0.85rem;font-weight:700;
+}
+.routine-block-prog{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.7rem;color:var(--gold);
+}
+.routine-slots{padding:8px;}
+.slot-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 10px;
+  border-radius:10px;
+  cursor:pointer;
+  transition:background 0.15s;
+}
+.slot-row:hover{background:var(--bg3);}
+.slot-row.done{opacity:0.6;}
+.slot-check{
+  width:20px;height:20px;
+  border-radius:6px;
+  border:2px solid var(--muted2);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:10px;
+  transition:all 0.2s;
+}
+.slot-row.done .slot-check{
+  background:var(--green);border-color:var(--green);color:var(--bg);
+}
+.slot-time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.7rem;color:var(--gold);min-width:44px;
+}
+.slot-name{font-size:0.82rem;flex:1;}
+.slot-pts{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);}
+
+/* ── HABIT TRACKER ── */
+.habit-grid{
+  display:flex;flex-direction:column;gap:8px;
+  margin-bottom:16px;
+}
+.habit-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.habit-row.checked{
+  border-color:var(--border-green);
+  background:rgba(0,230,118,0.04);
+}
+.habit-check{
+  width:24px;height:24px;
+  border-radius:8px;
+  border:2px solid var(--muted2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;flex-shrink:0;transition:all 0.2s;
+}
+.habit-row.checked .habit-check{
+  background:var(--green);border-color:var(--green);color:var(--bg);
+}
+.habit-icon{font-size:18px;}
+.habit-name{flex:1;font-size:0.85rem;font-weight:600;}
+.habit-streak{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.7rem;color:var(--gold);
+}
+
+/* Weekly grid */
+.week-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:4px;
+}
+.week-day{
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:6px 4px;
+  text-align:center;
+}
+.week-day-label{
+  font-size:0.55rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:4px;
+}
+.week-day-dots{
+  display:flex;flex-wrap:wrap;gap:2px;justify-content:center;
+}
+.w-dot{
+  width:5px;height:5px;
+  border-radius:50%;background:var(--muted2);
+}
+.w-dot.done{background:var(--green);}
+
+/* ── JOURNAL ── */
+.mood-row{
+  display:flex;gap:6px;margin-bottom:14px;
+}
+.mood-btn{
+  flex:1;
+  background:var(--card);
+  border:2px solid var(--border);
+  border-radius:12px;
+  padding:10px 6px;
+  font-size:20px;
+  cursor:pointer;transition:all 0.2s;
+}
+.mood-btn.selected{
+  border-color:var(--gold);
+  background:rgba(212,175,55,0.1);
+}
+.journal-input{
+  width:100%;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+  color:var(--white);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:0.9rem;
+  resize:none;
+  min-height:130px;
+  outline:none;
+  transition:border-color 0.2s;
+  line-height:1.7;
+  margin-bottom:10px;
+}
+.journal-input:focus{border-color:var(--gold);}
+.btn-save{
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none;border-radius:10px;
+  padding:11px 24px;
+  color:#000;font-family:'Hind Siliguri',sans-serif;
+  font-size:0.85rem;font-weight:700;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,175,55,0.3);}
+
+.journal-feed{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.journal-entry{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+}
+.je-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+.je-mood{font-size:18px;}
+.je-date{font-size:0.65rem;color:var(--muted);}
+.je-text{font-size:0.82rem;color:var(--white);line-height:1.6;}
+
+/* ── MONEY TRACKER ── */
+.money-hero{
+  background:linear-gradient(135deg,rgba(0,230,118,0.1),var(--card));
+  border:1px solid var(--border-green);
+  border-radius:20px;
+  padding:28px 20px;
+  text-align:center;
+  margin-bottom:12px;
+}
+.money-amount{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3rem,9vw,5rem);
+  color:var(--green);
+  text-shadow:0 0 40px rgba(0,230,118,0.4);
+  line-height:1;
+}
+.money-label{font-size:0.75rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px;}
+.money-breakdown{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;margin-top:16px;
+}
+.mb-item{text-align:center;}
+.mb-val{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.9rem;color:var(--gold2);font-weight:700;
+}
+.mb-label{font-size:0.6rem;color:var(--muted);}
+
+.buy-list{display:flex;flex-direction:column;gap:8px;}
+.buy-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px 14px;
+}
+.buy-icon{font-size:22px;}
+.buy-info{flex:1;}
+.buy-name{font-size:0.82rem;font-weight:700;}
+.buy-price{font-size:0.7rem;color:var(--muted);}
+.buy-status{
+  font-size:0.65rem;font-weight:700;
+  padding:3px 8px;border-radius:50px;
+}
+.buy-status.can{background:rgba(0,230,118,0.15);color:var(--green);}
+.buy-status.cant{background:rgba(90,90,120,0.3);color:var(--muted);}
+
+/* ── DAILY CHALLENGE ── */
+.challenge-card{
+  background:linear-gradient(135deg,rgba(64,196,255,0.08),var(--card));
+  border:1px solid rgba(64,196,255,0.2);
+  border-radius:20px;
+  padding:20px;
+  margin-bottom:12px;
+}
+.challenge-header{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:14px;
+}
+.challenge-tag{
+  font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--blue);
+  background:rgba(64,196,255,0.1);
+  border:1px solid rgba(64,196,255,0.2);
+  border-radius:50px;padding:3px 10px;
+}
+.challenge-day{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.7rem;color:var(--muted);
+  margin-left:auto;
+}
+.challenge-items{display:flex;flex-direction:column;gap:8px;}
+.ch-item{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg3);border-radius:10px;
+  padding:10px 12px;cursor:pointer;transition:all 0.2s;
+}
+.ch-item:hover{background:rgba(64,196,255,0.05);}
+.ch-item.done{opacity:0.6;}
+.ch-check{
+  width:18px;height:18px;
+  border-radius:50%;
+  border:2px solid var(--muted2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;flex-shrink:0;transition:all 0.2s;
+}
+.ch-item.done .ch-check{background:var(--green);border-color:var(--green);color:var(--bg);}
+.ch-text{font-size:0.82rem;flex:1;}
+.ch-pts{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--blue);}
+
+/* ── MOTIVATION ── */
+.motive-card{
+  background:var(--card);
+  border:1px solid var(--border-gold);
+  border-radius:20px;
+  padding:28px 24px;
+  text-align:center;
+  position:relative;overflow:hidden;
+  cursor:pointer;
+  transition:all 0.3s;
+  margin-bottom:12px;
+}
+.motive-card:hover{border-color:var(--gold);}
+.motive-card::before{
+  content:'"';
+  position:absolute;top:-10px;left:12px;
+  font-family:'Bebas Neue',sans-serif;font-size:8rem;
+  color:rgba(212,175,55,0.05);pointer-events:none;
+  line-height:1;
+}
+.motive-text{
+  font-size:1.1rem;font-weight:600;
+  line-height:1.6;
+  color:var(--white);
+  margin-bottom:12px;
+}
+.motive-author{font-size:0.7rem;color:var(--gold);letter-spacing:1px;}
+.motive-refresh{font-size:0.65rem;color:var(--muted);margin-top:12px;}
+
+/* ── PROGRESS DASHBOARD ── */
+.progress-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+.prog-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+}
+.prog-label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.prog-val{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2.2rem;line-height:1;
+  color:var(--white);
+}
+.prog-val.green{color:var(--green);}
+.prog-val.gold{color:var(--gold);}
+.prog-sub{font-size:0.7rem;color:var(--muted);margin-top:4px;}
+
+/* ── RELAPSE MODE ── */
+.relapse-bar{
+  display:none;
+  background:linear-gradient(135deg,rgba(255,82,82,0.15),rgba(255,82,82,0.05));
+  border:1px solid rgba(255,82,82,0.3);
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:16px;
+  text-align:center;
+}
+.relapse-bar.show{display:block;}
+.relapse-title{
+  font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;
+  color:var(--red);margin-bottom:6px;
+}
+.relapse-msg{font-size:0.8rem;color:var(--muted);line-height:1.5;margin-bottom:12px;}
+.btn-relapse{
+  background:rgba(255,82,82,0.2);
+  border:1px solid rgba(255,82,82,0.4);
+  border-radius:10px;
+  padding:8px 20px;
+  color:var(--red);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:0.8rem;font-weight:700;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-restart{
+  background:linear-gradient(135deg,var(--green),var(--green2));
+  border:none;border-radius:10px;
+  padding:8px 20px;
+  color:var(--bg);
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:0.8rem;font-weight:700;
+  cursor:pointer;margin-left:8px;
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(5,5,8,0.95);
+  backdrop-filter:blur(24px);
+  border-top:1px solid var(--border);
+  display:flex;
+  padding:8px 0 14px;
+  z-index:100;
+}
+.bn-item{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;gap:3px;
+  cursor:pointer;opacity:0.4;
+  transition:opacity 0.2s;
+  padding:4px 0;
+}
+.bn-item.active{opacity:1;}
+.bn-icon{font-size:20px;}
+.bn-label{font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;color:var(--gold);}
+
+/* ── CELEBRATION ── */
+.celebration{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.85);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9000;display:none;
+}
+.celebration.show{display:flex;}
+.cel-box{
+  background:var(--card);
+  border:1px solid var(--border-gold);
+  border-radius:28px;
+  padding:40px 32px;
+  text-align:center;
+  max-width:340px;width:90%;
+  animation:celPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+  position:relative;overflow:hidden;
+}
+.cel-box::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+@keyframes celPop{
+  from{transform:scale(0.4) rotate(-5deg);opacity:0;}
+  to{transform:scale(1) rotate(0deg);opacity:1;}
+}
+.cel-emoji{font-size:64px;margin-bottom:12px;display:block;}
+.cel-badge{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:0.65rem;letter-spacing:3px;
+  color:var(--gold);
+  background:rgba(212,175,55,0.1);
+  border:1px solid var(--border-gold);
+  border-radius:50px;padding:4px 14px;
+  display:inline-block;margin-bottom:12px;
+}
+.cel-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2rem;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:8px;
+}
+.cel-msg{font-size:0.85rem;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.cel-pts{
+  font-family:'JetBrains Mono',monospace;
+  font-size:1.4rem;color:var(--green);font-weight:700;margin-bottom:20px;
+}
+.btn-cel-close{
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none;border-radius:12px;
+  padding:12px 32px;color:#000;
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:0.9rem;font-weight:700;
+  cursor:pointer;
+}
+.confetti{position:absolute;pointer-events:none;}
+.cf{
+  position:absolute;
+  width:7px;height:7px;
+  border-radius:2px;
+  animation:cfFall 2.5s linear infinite;
+}
+@keyframes cfFall{
+  0%{transform:translateY(-20px) rotate(0deg);opacity:1;}
+  100%{transform:translateY(400px) rotate(900deg);opacity:0;}
+}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:88px;left:50%;transform:translateX(-50%);
+  background:var(--card2);
+  border:1px solid var(--border-green);
+  border-radius:50px;
+  padding:10px 20px;
+  color:var(--green);
+  font-size:0.82rem;
+  z-index:8000;
+  white-space:nowrap;
+  animation:toastIn 0.3s ease;
+  pointer-events:none;
+}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* PAGE SECTIONS SWITCH */
+.page-section{display:none;}
+.page-section.active{display:block;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px;}
+
+/* SYNC INDICATOR */
+.sync-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--green);
+  animation:syncPulse 2s ease-in-out infinite;
+  display:inline-block;
+}
+.sync-dot.offline{background:var(--red);animation:none;}
+.sync-dot.syncing{background:var(--gold);}
+@keyframes syncPulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* USER MENU */
+.user-avatar{
+  width:32px;height:32px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#000;
+  cursor:pointer;
+  position:relative;
+  flex-shrink:0;
+}
+.user-dropdown{
+  position:absolute;top:44px;right:0;
+  background:var(--card2);
+  border:1px solid var(--border-gold);
+  border-radius:14px;
+  padding:8px;
+  width:200px;
+  display:none;
+  z-index:200;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.user-dropdown.open{display:block;animation:fadeUp 0.2s ease;}
+.user-dd-name{
+  padding:8px 10px;
+  font-size:0.8rem;font-weight:700;
+  color:var(--white);
+  border-bottom:1px solid var(--border);
+  margin-bottom:6px;
+}
+.user-dd-email{font-size:0.65rem;color:var(--muted);font-weight:400;}
+.user-dd-item{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 10px;
+  font-size:0.8rem;color:var(--muted);
+  border-radius:8px;cursor:pointer;
+  transition:background 0.15s;
+}
+.user-dd-item:hover{background:var(--bg3);color:var(--white);}
+.user-dd-item.danger{color:var(--red);}
+
+/* OFFLINE BANNER */
+.offline-banner{
+  display:none;
+  background:rgba(255,82,82,0.1);
+  border-bottom:1px solid rgba(255,82,82,0.2);
+  padding:8px 16px;
+  text-align:center;
+  font-size:0.75rem;color:var(--red);
+  letter-spacing:0.5px;
+}
+.offline-banner.show{display:block;}
+
+/* FADE IN */
+.fade-in{animation:fadeUp 0.4s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* COMMUNITY */
+.community-feed{display:flex;flex-direction:column;gap:8px;}
+.community-post{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:14px;
+}
+.cp-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.cp-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#000;
+  flex-shrink:0;
+}
+.cp-name{font-size:0.82rem;font-weight:700;}
+.cp-days{font-size:0.65rem;color:var(--gold);}
+.cp-text{font-size:0.8rem;color:var(--muted);line-height:1.5;}
+.cp-like{
+  display:flex;align-items:center;gap:4px;
+  margin-top:8px;font-size:0.7rem;color:var(--muted);
+  cursor:pointer;width:fit-content;
+}
+.community-compose{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:14px;margin-bottom:10px;
+}
+.compose-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;
+  color:var(--white);font-family:'Hind Siliguri',sans-serif;
+  font-size:0.85rem;resize:none;outline:none;
+  min-height:70px;margin-bottom:8px;
+}
+.compose-input:focus{border-color:var(--gold);}
+</style>
+</head>
+<body>
+
+<!-- LOADING SPINNER -->
+<div class="auth-loading" id="auth-loading">
+  <div class="spinner"></div>
+  <div class="spinner-text">লোড হচ্ছে...</div>
+</div>
+
+<!-- ══════════ AUTH SCREEN ══════════ -->
+<div id="screen-auth" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">🌿</div>
+      <div class="auth-logo-text">NIRVAAN</div>
+    </div>
+    <p class="auth-tagline">তোমার journey cloud-এ সেভ হবে।<br>যেকোনো device থেকে access করো।</p>
+
+    <div class="auth-card">
+      <div class="auth-tab-row">
+        <button class="auth-tab active" onclick="authSwitchTab('login',this)">লগইন</button>
+        <button class="auth-tab" onclick="authSwitchTab('register',this)">নতুন account</button>
+      </div>
+
+      <div class="auth-error" id="auth-error"></div>
+      <div class="auth-success" id="auth-success"></div>
+
+      <!-- LOGIN FORM -->
+      <div class="auth-form active" id="auth-form-login">
+        <input type="email" id="login-email" class="auth-input" placeholder="ইমেইল">
+        <input type="password" id="login-pass" class="auth-input" placeholder="পাসওয়ার্ড">
+        <button class="auth-btn" onclick="doEmailLogin()">
+          <span>🔓</span> লগইন করো
+        </button>
+        <div style="text-align:right;margin-top:-6px;margin-bottom:12px">
+          <span onclick="doForgotPassword()" style="font-size:0.75rem;color:var(--gold);cursor:pointer">পাসওয়ার্ড ভুলে গেছো?</span>
+        </div>
+        <div class="auth-divider">অথবা</div>
+        <button class="google-btn" onclick="doGoogleLogin()">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 12 24 12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.5 29.4 4 24 4 16.3 4 9.7 8.5 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.4 26.8 36 24 36c-5.3 0-9.7-3.4-11.3-8.1L6 33.1C9.4 39.5 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C37 37.3 44 31.5 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+          Google দিয়ে লগইন
+        </button>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div class="auth-form" id="auth-form-register">
+        <input type="text" id="reg-name" class="auth-input" placeholder="তোমার নাম">
+        <input type="email" id="reg-email" class="auth-input" placeholder="ইমেইল">
+        <input type="password" id="reg-pass" class="auth-input" placeholder="পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)">
+        <button class="auth-btn" onclick="doEmailRegister()">
+          <span>🚀</span> account তৈরি করো
+        </button>
+        <div class="auth-divider">অথবা</div>
+        <button class="google-btn" onclick="doGoogleLogin()">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 12 24 12c3.1 0 5.8 1.1 7.9 2.9l5.7-5.7C34.1 6.5 29.4 4 24 4 16.3 4 9.7 8.5 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.4 26.8 36 24 36c-5.3 0-9.7-3.4-11.3-8.1L6 33.1C9.4 39.5 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C37 37.3 44 31.5 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+          Google দিয়ে লগইন
+        </button>
+      </div>
+    </div>
+
+    <div style="font-size:0.7rem;color:var(--muted);text-align:center;line-height:1.6">
+      তোমার data সম্পূর্ণ নিরাপদ।<br>Firebase দ্বারা encrypt করা।
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ONBOARDING ══════════ -->
+<div id="screen-onboard" class="screen active">
+  <div class="ob-wrap">
+    <div class="ob-logo">
+      <div class="ob-logo-mark">🌿</div>
+      <div>
+        <div class="ob-logo-text">NIRVAAN</div>
+        <div class="ob-logo-sub">Quit Smoking Life Tracker</div>
+      </div>
+    </div>
+
+    <div class="ob-headline">তোমার<br><span>মুক্তির</span><br>যাত্রা</div>
+    <p class="ob-sub">প্রতিটা সেকেন্ড তোমার শরীর সারছে। এখনই শুরু করো।</p>
+
+    <div class="ob-progress">
+      <div class="ob-dot active" id="od0"></div>
+      <div class="ob-dot" id="od1"></div>
+      <div class="ob-dot" id="od2"></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="ob-step active" id="ob-step-0">
+      <div class="ob-step-label">ধাপ ১ — পরিচয়</div>
+      <div class="input-group">
+        <label class="input-label">তোমার নাম কী?</label>
+        <input type="text" id="inp-name" class="ob-input" placeholder="নাম লেখো...">
+      </div>
+      <div class="input-group">
+        <label class="input-label">শেষ সিগারেট কখন খেয়েছিলে?</label>
+        <input type="datetime-local" id="inp-quit" class="ob-input">
+      </div>
+      <button class="btn-next" onclick="obNext(0)">পরের ধাপ →</button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="ob-step" id="ob-step-1">
+      <div class="ob-step-label">ধাপ ২ — সিগারেট তথ্য</div>
+      <div class="input-group">
+        <label class="input-label">দিনে কতটা সিগারেট খেতে?</label>
+        <select id="inp-cpd" class="ob-input">
+          <option value="5">১–৫ টা</option>
+          <option value="10" selected>৬–১০ টা</option>
+          <option value="15">১১–১৫ টা</option>
+          <option value="20">১৫–২০ টা</option>
+          <option value="25">২০+ টা</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">প্রতিটার দাম (টাকা)</label>
+        <input type="number" id="inp-price" class="ob-input" value="12" placeholder="12">
+      </div>
+      <div class="input-group">
+        <label class="input-label">কতদিন ধরে খাচ্ছিলে?</label>
+        <select id="inp-years" class="ob-input">
+          <option value="1">১ বছরের কম</option>
+          <option value="3">১–৩ বছর</option>
+          <option value="5" selected>৩–৫ বছর</option>
+          <option value="10">৫–১০ বছর</option>
+          <option value="15">১০+ বছর</option>
+        </select>
+      </div>
+      <button class="btn-back" onclick="obBack(1)">← পিছনে</button>
+      <button class="btn-next" style="width:auto;padding:14px 32px;" onclick="obNext(1)">পরের ধাপ →</button>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="ob-step" id="ob-step-2">
+      <div class="ob-step-label">ধাপ ৩ — তোমার লক্ষ্য</div>
+      <div class="input-group">
+        <label class="input-label">সবচেয়ে বড় কারণ কী ছেড়ে দেওয়ার?</label>
+        <select id="inp-reason" class="ob-input">
+          <option>স্বাস্থ্যের জন্য</option>
+          <option>পরিবারের জন্য</option>
+          <option>টাকা বাঁচানোর জন্য</option>
+          <option>ক্যারিয়ারের জন্য</option>
+          <option>নিজেকে প্রমাণ করার জন্য</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">তুমি কে? (রুটিন কাস্টমাইজের জন্য)</label>
+        <select id="inp-type" class="ob-input">
+          <option value="student">Student</option>
+          <option value="coder">Developer/Coder</option>
+          <option value="ielts">IELTS Candidate</option>
+          <option value="professional">Professional</option>
+          <option value="other">অন্যান্য</option>
+        </select>
+      </div>
+      <button class="btn-back" onclick="obBack(2)">← পিছনে</button>
+      <button class="btn-next" style="width:auto;padding:14px 32px;" onclick="launchApp()">🚀 যাত্রা শুরু করো!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="screen-app" class="screen">
+
+  <div class="navbar">
+    <div class="nav-brand">NIRVAAN</div>
+    <div class="nav-right">
+      <div class="sync-dot" id="sync-dot" title="Synced"></div>
+      <div class="nav-streak">🔥 <span id="streak-num">0</span>d</div>
+      <div class="nav-level" id="nav-level-badge">BEGINNER</div>
+      <div class="user-avatar" id="user-avatar" onclick="toggleUserMenu()">U
+        <div class="user-dropdown" id="user-dropdown">
+          <div class="user-dd-name">
+            <div id="dd-name">User</div>
+            <div class="user-dd-email" id="dd-email"></div>
+          </div>
+          <div class="user-dd-item" onclick="showPage('milestone',document.querySelector('.bn-item:nth-child(2)'))">🏆 মাইলস্টোন</div>
+          <div class="user-dd-item" onclick="exportData()">📥 Data export</div>
+          <div class="user-dd-item danger" onclick="doSignOut()">🚪 লগআউট</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- OFFLINE BANNER -->
+  <div class="offline-banner" id="offline-banner">⚡ Offline mode — পরে sync হবে</div>
+
+  <!-- RELAPSE BAR -->
+  <div class="relapse-bar" id="relapse-bar">
+    <div class="relapse-title">⚠ RECOVERY MODE ACTIVATED</div>
+    <div class="relapse-msg">একবার হয়েছে — এতে সব শেষ হয়ে যায় না। উঠে দাঁড়াও। তোমার progress মুছবে না।</div>
+    <button class="btn-relapse" onclick="dismissRelapse()">আমি ঠিক আছি</button>
+    <button class="btn-restart" onclick="restartTimer()">নতুন করে শুরু</button>
+  </div>
+
+  <!-- ─── HOME PAGE ─── -->
+  <div class="page-section active" id="page-home">
+
+    <div class="hero">
+      <div class="hero-eyebrow">প্রতিটা সেকেন্ড তোমার শরীর সারছে</div>
+      <div class="hero-quote">"Every second you stay smoke free — your body heals."</div>
+
+      <div class="timer-block">
+        <div class="timer-row">
+          <div class="t-unit"><span class="t-num" id="t-y">00</span><div class="t-label">বছর</div></div>
+          <div class="t-sep">:</div>
+          <div class="t-unit"><span class="t-num" id="t-mo">00</span><div class="t-label">মাস</div></div>
+          <div class="t-sep">:</div>
+          <div class="t-unit"><span class="t-num" id="t-d">00</span><div class="t-label">দিন</div></div>
+          <div class="t-sep">:</div>
+          <div class="t-unit"><span class="t-num" id="t-h">00</span><div class="t-label">ঘণ্টা</div></div>
+          <div class="t-sep">:</div>
+          <div class="t-unit"><span class="t-num" id="t-m">00</span><div class="t-label">মিনিট</div></div>
+          <div class="t-sep">:</div>
+          <div class="t-unit"><span class="t-num" id="t-s">00</span><div class="t-label">সেকেন্ড</div></div>
+        </div>
+        <div class="ms-bar">
+          <div class="ms-label">MS</div>
+          <div class="ms-track"><div class="ms-fill" id="ms-fill"></div></div>
+          <div class="ms-val" id="ms-val">000</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-tile gold-tile"><div class="st-icon">🚬</div><div class="st-val gold" id="s-cigs">0</div><div class="st-label">সিগারেট এড়ানো</div></div>
+      <div class="stat-tile green-tile"><div class="st-icon">💰</div><div class="st-val green" id="s-money">৳0</div><div class="st-label">টাকা বাঁচানো</div></div>
+      <div class="stat-tile"><div class="st-icon">❤️</div><div class="st-val" id="s-life">0m</div><div class="st-label">জীবন ফিরেছে</div></div>
+      <div class="stat-tile"><div class="st-icon">💪</div><div class="st-val gold" id="s-craving">0</div><div class="st-label">Craving জিতেছি</div></div>
+    </div>
+
+    <!-- SOS -->
+    <div class="section">
+      <div class="sos-trigger" onclick="toggleSOS()" id="sos-trigger">
+        <div class="sos-icon">🚨</div>
+        <div class="sos-text">I FEEL LIKE SMOKING</div>
+        <div class="sos-sub">ট্যাপ করলে তাৎক্ষণিক সাহায্য পাবে</div>
+      </div>
+      <div class="sos-panel" id="sos-panel">
+        <div class="sos-tabs">
+          <button class="sos-tab active" onclick="sosSwitchTab(0,this)">🫁 শ্বাস-ব্যায়াম</button>
+          <button class="sos-tab" onclick="sosSwitchTab(1,this)">⚡ Distraction</button>
+          <button class="sos-tab" onclick="sosSwitchTab(2,this)">📊 লগ করো</button>
+        </div>
+        <div class="sos-content">
+          <!-- BREATHING -->
+          <div class="sos-pane active" id="sos-p0">
+            <div class="breath-wrap">
+              <div class="breath-ring" id="breath-ring" onclick="doBreath()">
+                <div class="breath-ring-pulse" id="breath-pulse"></div>
+                <div class="breath-inner" id="breath-inner">ট্যাপ<br>করো</div>
+              </div>
+              <div class="breath-phase" id="breath-phase">4-7-8 শ্বাস কৌশল</div>
+              <div style="font-size:0.72rem;color:var(--muted);text-align:center">৪ সেকেন্ড শ্বাস নাও · ৭ ধরো · ৮ ছাড়ো</div>
+              <div class="breath-timer-bar"><div class="breath-timer-fill" id="breath-fill" style="width:0%"></div></div>
+            </div>
+          </div>
+          <!-- DISTRACTION -->
+          <div class="sos-pane" id="sos-p1">
+            <div class="distraction-list" id="distraction-list"></div>
+          </div>
+          <!-- LOG -->
+          <div class="sos-pane" id="sos-p2">
+            <div class="craving-btns">
+              <button class="craving-btn won" onclick="logCraving(true)">✅ জিতেছি!</button>
+              <button class="craving-btn lost" onclick="logCraving(false)">😔 এবার না</button>
+            </div>
+            <div class="craving-count" id="craving-count">0</div>
+            <div class="craving-sub">টি craving জিতেছো আজ পর্যন্ত</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOTIVATION -->
+    <div class="section">
+      <div class="motive-card" onclick="newMotivation()">
+        <div class="motive-text" id="motive-text">তোমার শরীর প্রতিটি মুহূর্তে সেরে উঠছে।</div>
+        <div class="motive-author" id="motive-author">— Dr. আরমান</div>
+        <div class="motive-refresh">👆 ট্যাপ করলে নতুন বার্তা</div>
+      </div>
+    </div>
+
+    <!-- DAILY CHALLENGE -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">আজকের <span>চ্যালেঞ্জ</span></div>
+        <div class="section-badge" id="challenge-badge">0/3 সম্পন্ন</div>
+      </div>
+      <div class="challenge-card">
+        <div class="challenge-header">
+          <div class="challenge-tag">Daily Mission</div>
+          <div class="challenge-day" id="challenge-day-num">Day 1</div>
+        </div>
+        <div class="challenge-items" id="challenge-items"></div>
+      </div>
+    </div>
+
+    <!-- COACH MESSAGE -->
+    <div class="section" id="coach-section">
+      <div class="section-header">
+        <div class="section-title">গুরুজির <span>বার্তা</span></div>
+      </div>
+      <div id="coach-messages-home"></div>
+    </div>
+
+  </div>
+
+  <!-- ─── MILESTONES PAGE ─── -->
+  <div class="page-section" id="page-milestone">
+    <div class="section fade-in">
+      <div class="section-header">
+        <div class="section-title">তোমার <span>মাইলস্টোন</span></div>
+        <div class="section-badge" id="ms-count-badge">0 অর্জিত</div>
+      </div>
+      <div class="milestone-list" id="milestone-list"></div>
+    </div>
+
+    <div class="section fade-in" style="margin-top:16px">
+      <div class="section-header">
+        <div class="section-title">Level &amp; <span>Badges</span></div>
+      </div>
+      <div class="level-bar-card">
+        <div class="level-info">
+          <div>
+            <div style="font-size:0.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">বর্তমান স্তর</div>
+            <div class="level-name" id="level-name">BEGINNER</div>
+          </div>
+          <div style="text-align:right">
+            <div class="level-pts"><span id="curr-pts">0</span> / <span id="next-pts">500</span> pts</div>
+            <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">পরবর্তী: <span id="next-lvl-name">Fighter</span></div>
+          </div>
+        </div>
+        <div class="level-track"><div class="level-fill" id="level-fill" style="width:0%"></div></div>
+      </div>
+      <div class="badges-grid" id="badges-grid"></div>
+    </div>
+  </div>
+
+  <!-- ─── HEALTH PAGE ─── -->
+  <div class="page-section" id="page-health">
+    <div class="section fade-in">
+      <div class="section-header">
+        <div class="section-title">স্বাস্থ্য <span>টাইমলাইন</span></div>
+      </div>
+      <div class="health-items" id="health-items"></div>
+    </div>
+    <div class="section fade-in" style="margin-top:16px">
+      <div class="section-header">
+        <div class="section-title">টাকা <span>সঞ্চয়</span></div>
+      </div>
+      <div class="money-hero">
+        <div class="money-amount">৳<span id="money-big">0</span></div>
+        <div class="money-label">মোট সঞ্চয়</div>
+        <div class="money-breakdown">
+          <div class="mb-item"><div class="mb-val" id="mb-day">৳0</div><div class="mb-label">আজকে</div></div>
+          <div class="mb-item"><div class="mb-val" id="mb-week">৳0</div><div class="mb-label">এই সপ্তাহ</div></div>
+          <div class="mb-item"><div class="mb-val" id="mb-year">৳0</div><div class="mb-label">বার্ষিক হারে</div></div>
+        </div>
+      </div>
+      <div class="buy-list" id="buy-list"></div>
+    </div>
+  </div>
+
+  <!-- ─── ROUTINE PAGE ─── -->
+  <div class="page-section" id="page-routine">
+    <div class="section fade-in">
+      <div class="section-header">
+        <div class="section-title">দৈনিক <span>রুটিন</span></div>
+      </div>
+      <div class="routine-sections" id="routine-sections"></div>
+    </div>
+    <div class="section fade-in" style="margin-top:16px">
+      <div class="section-header">
+        <div class="section-title">Habit <span>Tracker</span></div>
+        <div class="section-badge" id="habit-badge">0/5</div>
+      </div>
+      <div class="habit-grid" id="habit-grid"></div>
+      <div class="section-title" style="font-size:1rem;margin-bottom:10px">এই সপ্তাহ</div>
+      <div class="week-grid" id="week-grid"></div>
+    </div>
+    <div class="section fade-in" style="margin-top:16px">
+      <div class="section-header">
+        <div class="section-title">📊 Progress <span>Dashboard</span></div>
+      </div>
+      <div class="progress-grid" id="prog-dashboard"></div>
+    </div>
+  </div>
+
+  <!-- ─── JOURNAL PAGE ─── -->
+  <div class="page-section" id="page-journal">
+    <div class="section fade-in">
+      <div class="section-header">
+        <div class="section-title">ব্যক্তিগত <span>জার্নাল</span></div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px">
+        <div style="font-size:0.7rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">আজকের মনের অবস্থা</div>
+        <div class="mood-row" id="mood-row"></div>
+        <textarea class="journal-input" id="journal-input" placeholder="আজ কেমন কাটলো? Craving এলো? কী অনুভব করলে? সব লিখে ফেলো..."></textarea>
+        <button class="btn-save" onclick="saveJournal()">💾 সেভ করো</button>
+      </div>
+      <div class="journal-feed" id="journal-feed"></div>
+    </div>
+    <div class="section fade-in" style="margin-top:16px">
+      <div class="section-header">
+        <div class="section-title">Community <span>Wall</span></div>
+      </div>
+      <div class="community-compose">
+        <textarea class="compose-input" id="community-input" placeholder="তোমার progress শেয়ার করো..."></textarea>
+        <button class="btn-save" onclick="postCommunity()">📢 পোস্ট করো</button>
+      </div>
+      <div class="community-feed" id="community-feed"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CELEBRATION -->
+<div class="celebration" id="celebration">
+  <div class="cel-box" id="cel-box">
+    <div class="confetti" id="confetti-wrap"></div>
+    <span class="cel-emoji" id="cel-emoji">🎉</span>
+    <div class="cel-badge" id="cel-badge">MILESTONE UNLOCKED</div>
+    <div class="cel-title" id="cel-title">অসাধারণ!</div>
+    <div class="cel-msg" id="cel-msg">তুমি একটা নতুন মাইলস্টোন পেরিয়েছো!</div>
+    <div class="cel-pts" id="cel-pts">+100 pts</div>
+    <button class="btn-cel-close" onclick="closeCel()">চালিয়ে যাও! →</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottom-nav" style="display:none">
+  <div class="bn-item active" onclick="showPage('home',this)"><div class="bn-icon">⏱️</div><div class="bn-label">Home</div></div>
+  <div class="bn-item" onclick="showPage('milestone',this)"><div class="bn-icon">🏆</div><div class="bn-label">Level</div></div>
+  <div class="bn-item" onclick="showPage('health',this)"><div class="bn-icon">❤️</div><div class="bn-label">Health</div></div>
+  <div class="bn-item" onclick="showPage('routine',this)"><div class="bn-icon">📋</div><div class="bn-label">Routine</div></div>
+  <div class="bn-item" onclick="showPage('journal',this)"><div class="bn-icon">📓</div><div class="bn-label">Journal</div></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   FIREBASE INIT
+══════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyAxvlgFelSDpmzA5HRCjUoBb8AQkymCvt8",
+  authDomain: "planning-with-ai-55055.firebaseapp.com",
+  projectId: "planning-with-ai-55055",
+  storageBucket: "planning-with-ai-55055.firebasestorage.app",
+  messagingSenderId: "814662668043",
+  appId: "1:814662668043:web:a5fe97201482253d7c5c0e"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Enable offline persistence
+db.enablePersistence().catch(err => {
+  if (err.code === 'failed-precondition') console.warn('Multiple tabs open');
+  else if (err.code === 'unimplemented') console.warn('Browser unsupported');
+});
+
+/* ── Current user ── */
+let currentUser = null;
+let unsubscribeSnapshot = null;
+
+/* ══════════════════════════════════════
+   AUTH STATE OBSERVER
+══════════════════════════════════════ */
+window.onload = function() {
+  // Set default datetime
+  const n = new Date(); n.setSeconds(0);
+  const el = document.getElementById('inp-quit');
+  if (el) el.value = n.toISOString().slice(0,16);
+
+  // Show loading while checking auth
+  document.getElementById('auth-loading').classList.add('show');
+
+  auth.onAuthStateChanged(user => {
+    document.getElementById('auth-loading').classList.remove('show');
+    if (user) {
+      currentUser = user;
+      updateUserUI(user);
+      loadUserData(user.uid);
+    } else {
+      currentUser = null;
+      showScreen('auth');
+    }
+  });
+
+  // Online/offline detection
+  window.addEventListener('online', () => setSyncStatus('online'));
+  window.addEventListener('offline', () => setSyncStatus('offline'));
+};
+
+function updateUserUI(user) {
+  const name = user.displayName || user.email.split('@')[0];
+  const initials = name.slice(0,1).toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  const dropdown = document.getElementById('user-dropdown');
+  // re-add dropdown after textContent wipe
+  document.getElementById('user-avatar').innerHTML = initials + `
+    <div class="user-dropdown" id="user-dropdown">
+      <div class="user-dd-name">
+        <div id="dd-name">${name}</div>
+        <div class="user-dd-email">${user.email}</div>
+      </div>
+      <div class="user-dd-item" onclick="showPage('milestone',document.querySelector('.bn-item:nth-child(2)'))">🏆 মাইলস্টোন</div>
+      <div class="user-dd-item" onclick="exportData()">📥 Data export</div>
+      <div class="user-dd-item danger" onclick="doSignOut()">🚪 লগআউট</div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   FIRESTORE — LOAD / SAVE
+══════════════════════════════════════ */
+function getUserDoc(uid) {
+  return db.collection('users').doc(uid);
+}
+
+async function loadUserData(uid) {
+  setSyncStatus('syncing');
+  try {
+    const doc = await getUserDoc(uid).get();
+    if (doc.exists) {
+      U = doc.data();
+      // Convert Firestore Timestamps back to ms if needed
+      if (U.quitTime && U.quitTime.toMillis) U.quitTime = U.quitTime.toMillis();
+      setSyncStatus('online');
+      initApp();
+    } else {
+      // New user — show onboarding
+      setSyncStatus('online');
+      showScreen('onboard');
+    }
+  } catch (e) {
+    console.error('Load error:', e);
+    setSyncStatus('offline');
+    // Try localStorage fallback
+    const saved = localStorage.getItem('nirvaan_v2');
+    if (saved) { U = JSON.parse(saved); initApp(); }
+    else showScreen('onboard');
+  }
+}
+
+// Debounced save — prevents too many Firestore writes
+let saveTimer = null;
+function saveU() {
+  // Always save locally first
+  localStorage.setItem('nirvaan_v2', JSON.stringify(U));
+  // Debounce Firestore write (500ms)
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => syncToFirestore(), 500);
+}
+
+async function syncToFirestore() {
+  if (!currentUser) return;
+  setSyncStatus('syncing');
+  try {
+    await getUserDoc(currentUser.uid).set(U, { merge: true });
+    setSyncStatus('online');
+  } catch (e) {
+    console.error('Sync error:', e);
+    setSyncStatus('offline');
+  }
+}
+
+/* ── Firestore sub-collections ── */
+async function saveJournalToFS(entry) {
+  if (!currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid)
+      .collection('journals').add({
+        ...entry,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+  } catch(e) { console.error('Journal save error:', e); }
+}
+
+async function saveCommunityPost(post) {
+  try {
+    await db.collection('community').add({
+      ...post,
+      uid: currentUser.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      likes: 0
+    });
+  } catch(e) { console.error('Community post error:', e); }
+}
+
+async function loadCommunityPosts() {
+  try {
+    const snap = await db.collection('community')
+      .orderBy('createdAt', 'desc')
+      .limit(20).get();
+    const posts = [];
+    snap.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
+    return posts;
+  } catch(e) {
+    return U.community || COMMUNITY_SEEDS;
+  }
+}
+
+/* ══════════════════════════════════════
+   AUTH FUNCTIONS
+══════════════════════════════════════ */
+function authSwitchTab(tab, btn) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('auth-form-' + tab).classList.add('active');
+  clearAuthMessages();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('auth-success').style.display = 'none';
+}
+function showAuthSuccess(msg) {
+  const el = document.getElementById('auth-success');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('auth-error').style.display = 'none';
+}
+function clearAuthMessages() {
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'none';
+}
+
+async function doEmailLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!email || !pass) { showAuthError('ইমেইল ও পাসওয়ার্ড দাও!'); return; }
+  const btn = event.target.closest('.auth-btn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0 auto"></div>';
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    btn.disabled = false; btn.innerHTML = '<span>🔓</span> লগইন করো';
+    const msgs = {
+      'auth/user-not-found': 'এই ইমেইলে কোনো account নেই।',
+      'auth/wrong-password': 'পাসওয়ার্ড ভুল।',
+      'auth/invalid-email': 'ইমেইল format ঠিক নেই।',
+      'auth/too-many-requests': 'অনেকবার চেষ্টা করেছো। একটু পরে আবার চেষ্টা করো।',
+    };
+    showAuthError(msgs[e.code] || 'লগইন হয়নি: ' + e.message);
+  }
+}
+
+async function doEmailRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  if (!name) { showAuthError('নাম দাও!'); return; }
+  if (!email || !pass) { showAuthError('ইমেইল ও পাসওয়ার্ড দাও!'); return; }
+  if (pass.length < 6) { showAuthError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।'); return; }
+  const btn = event.target.closest('.auth-btn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0 auto"></div>';
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await cred.user.updateProfile({ displayName: name });
+    // Pre-fill name in onboarding
+    const nameInp = document.getElementById('inp-name');
+    if (nameInp) nameInp.value = name;
+  } catch(e) {
+    btn.disabled = false; btn.innerHTML = '<span>🚀</span> account তৈরি করো';
+    const msgs = {
+      'auth/email-already-in-use': 'এই ইমেইলে আগেই account আছে।',
+      'auth/invalid-email': 'ইমেইল format ঠিক নেই।',
+      'auth/weak-password': 'পাসওয়ার্ড আরো শক্তিশালী করো।',
+    };
+    showAuthError(msgs[e.code] || 'Account তৈরি হয়নি: ' + e.message);
+  }
+}
+
+async function doGoogleLogin() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  try {
+    await auth.signInWithPopup(provider);
+  } catch(e) {
+    if (e.code !== 'auth/popup-closed-by-user') {
+      showAuthError('Google লগইন হয়নি। আবার চেষ্টা করো।');
+    }
+  }
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { showAuthError('আগে ইমেইল লেখো!'); return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    showAuthSuccess('✅ পাসওয়ার্ড reset email পাঠানো হয়েছে!');
+  } catch(e) {
+    showAuthError('Email পাঠানো যায়নি।');
+  }
+}
+
+async function doSignOut() {
+  if (!confirm('লগআউট করবে?')) return;
+  unsubscribeSnapshot && unsubscribeSnapshot();
+  await auth.signOut();
+  U = {};
+  localStorage.removeItem('nirvaan_v2');
+  showScreen('auth');
+}
+
+/* ══════════════════════════════════════
+   SYNC STATUS
+══════════════════════════════════════ */
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  const banner = document.getElementById('offline-banner');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + (status === 'offline' ? 'offline' : status === 'syncing' ? 'syncing' : '');
+  if (banner) banner.className = 'offline-banner' + (status === 'offline' ? ' show' : '');
+}
+
+function toggleUserMenu() {
+  const dd = document.getElementById('user-dropdown');
+  if (dd) dd.classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const av = document.getElementById('user-avatar');
+  if (av && !av.contains(e.target)) {
+    const dd = document.getElementById('user-dropdown');
+    if (dd) dd.classList.remove('open');
+  }
+});
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(U, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nirvaan-data.json';
+  a.click();
+}
+
+/* ══════════════════════════════════════
+   SCREEN MANAGER
+══════════════════════════════════════ */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'app') {
+    document.getElementById('bottom-nav').style.display = 'flex';
+  } else {
+    document.getElementById('bottom-nav').style.display = 'none';
+  }
+}
+
+/* ══════════════════════════════════════
+   DATA DEFINITIONS
+══════════════════════════════════════ */
+let U = {};
+
+const MILESTONES = [
+  {id:'m1', ms:20*60*1000,      icon:'🩺', name:'২০ মিনিট',  pts:50,  desc:'রক্তচাপ স্বাভাবিক হচ্ছে!'},
+  {id:'m2', ms:60*60*1000,      icon:'⏰', name:'১ ঘণ্টা',   pts:100, desc:'প্রথম ঘণ্টা — তুমি পারো!'},
+  {id:'m3', ms:6*3600*1000,     icon:'🌟', name:'৬ ঘণ্টা',   pts:150, desc:'নিকোটিন মাত্রা অর্ধেক হয়েছে'},
+  {id:'m4', ms:12*3600*1000,    icon:'🌙', name:'১২ ঘণ্টা',  pts:200, desc:'CO₂ মাত্রা স্বাভাবিক!'},
+  {id:'m5', ms:86400*1000,      icon:'🔥', name:'১ দিন',     pts:300, desc:'হার্ট অ্যাটাক ঝুঁকি কমছে!'},
+  {id:'m6', ms:2*86400*1000,    icon:'👃', name:'২ দিন',     pts:350, desc:'গন্ধ ও স্বাদ ফিরছে!'},
+  {id:'m7', ms:3*86400*1000,    icon:'💨', name:'৩ দিন',     pts:400, desc:'শ্বাস নেওয়া সহজ হচ্ছে!'},
+  {id:'m8', ms:7*86400*1000,    icon:'🦋', name:'১ সপ্তাহ',  pts:600, desc:'তুমি এখন একজন যোদ্ধা!'},
+  {id:'m9', ms:14*86400*1000,   icon:'🏃', name:'২ সপ্তাহ',  pts:700, desc:'রক্ত সঞ্চালন উন্নত!'},
+  {id:'m10',ms:30*86400*1000,   icon:'🌕', name:'১ মাস',     pts:1000,desc:'ফুসফুস ৩০% উন্নত!'},
+  {id:'m11',ms:90*86400*1000,   icon:'💪', name:'৩ মাস',     pts:1500,desc:'কাশি ও শ্বাসকষ্ট কমেছে!'},
+  {id:'m12',ms:180*86400*1000,  icon:'🎯', name:'৬ মাস',     pts:2000,desc:'শ্বাসতন্ত্র প্রায় স্বাভাবিক!'},
+  {id:'m13',ms:365*86400*1000,  icon:'👑', name:'১ বছর',     pts:5000,desc:'হৃদরোগ ঝুঁকি অর্ধেক!'},
+  {id:'m14',ms:2*365*86400*1000,icon:'🏆', name:'২ বছর',     pts:7000,desc:'ফুসফুস ক্যান্সার ঝুঁকি ৫০% কম!'},
+  {id:'m15',ms:5*365*86400*1000,icon:'⭐', name:'৫ বছর',     pts:10000,desc:'স্ট্রোক ঝুঁকি স্বাভাবিক!'},
+];
+
+const HEALTH = [
+  {ms:20*60*1000,    t:'২০ মিনিট',  title:'রক্তচাপ স্বাভাবিক', desc:'রক্তচাপ ও হৃদস্পন্দন কমতে শুরু করেছে।'},
+  {ms:8*3600*1000,   t:'৮ ঘণ্টা',  title:'CO₂ অর্ধেক',       desc:'কার্বন মনোক্সাইড মাত্রা অর্ধেক। অক্সিজেন বাড়ছে।'},
+  {ms:24*3600*1000,  t:'২৪ ঘণ্টা', title:'হার্ট অ্যাটাক ঝুঁকি কমলো', desc:'মাত্র একদিনে হার্ট অ্যাটাক সম্ভাবনা কমছে!'},
+  {ms:48*3600*1000,  t:'৪৮ ঘণ্টা', title:'গন্ধ-স্বাদ ফিরছে',  desc:'Nerve endings পুনরায় তৈরি হচ্ছে।'},
+  {ms:72*3600*1000,  t:'৭২ ঘণ্টা', title:'শ্বাস সহজ',         desc:'ব্রঙ্কিয়াল টিউব শিথিল। ফুসফুস ভালো।'},
+  {ms:14*86400*1000, t:'২ সপ্তাহ', title:'রক্ত সঞ্চালন উন্নত', desc:'হাঁটা ও ব্যায়াম অনেক সহজ হয়েছে।'},
+  {ms:30*86400*1000, t:'১ মাস',    title:'ফুসফুস ৩০% উন্নত',  desc:'Cilia পুনরায় কাজ শুরু করেছে।'},
+  {ms:365*86400*1000,t:'১ বছর',   title:'হৃদরোগ ঝুঁকি অর্ধেক', desc:'ধূমপায়ীর তুলনায় ঝুঁকি অর্ধেক!'},
+];
+
+const LEVELS = [
+  {name:'BEGINNER',pts:0},{name:'FIGHTER',pts:500},
+  {name:'WARRIOR',pts:1500},{name:'CHAMPION',pts:4000},
+  {name:'LEGEND',pts:10000},
+];
+
+const BADGES = [
+  {id:'b1',icon:'⏰',name:'১ ঘণ্টা',pts:100,ms:3600000},
+  {id:'b2',icon:'🔥',name:'১ দিন',  pts:300,ms:86400000},
+  {id:'b3',icon:'🦋',name:'১ সপ্তাহ',pts:600,ms:604800000},
+  {id:'b4',icon:'🌕',name:'১ মাস',  pts:1000,ms:2592000000},
+  {id:'b5',icon:'💪',name:'Fighter',pts:500, special:'craving_10'},
+  {id:'b6',icon:'📋',name:'Routine', pts:250, special:'routine_7'},
+  {id:'b7',icon:'📓',name:'Journal', pts:150, special:'journal_5'},
+  {id:'b8',icon:'👑',name:'১ বছর',  pts:5000,ms:31536000000},
+  {id:'b9',icon:'🏆',name:'Warrior', pts:1500,ms:1296000000},
+  {id:'b10',icon:'💎',name:'Diamond',pts:3000,ms:15552000000},
+];
+
+const DISTRACTIONS = [
+  {icon:'💧',text:'এক গ্লাস ঠান্ডা পানি আস্তে আস্তে পান করো'},
+  {icon:'🚶',text:'বাইরে ৫ মিনিট হেঁটে আসো — craving কমে যাবে'},
+  {icon:'✋',text:'১০টা push-up করো এখনই'},
+  {icon:'🍎',text:'ফল বা বাদাম খাও — মুখ ব্যস্ত রাখো'},
+  {icon:'📞',text:'কাছের মানুষকে ফোন করো'},
+  {icon:'🎵',text:'প্রিয় গান লাগাও — সাথে গাও'},
+  {icon:'✍️',text:'কেন ছেড়েছিলে সেটা এখনই লিখে ফেলো'},
+  {icon:'🧊',text:'ঠান্ডা পানি দিয়ে মুখ ধুয়ে নাও'},
+];
+
+const MOTIVATIONS = [
+  {text:'তোমার শরীর প্রতিটি মুহূর্তে সেরে উঠছে। এটা বিজ্ঞান।', author:'Dr. আরমান'},
+  {text:'Craving মাত্র ৩-৫ মিনিট থাকে। সেটুকু পার করলেই তুমি জিতবে।', author:'Dr. আরমান'},
+  {text:'তুমি আজ পর্যন্ত এটা করেছো — এটাই তোমার শক্তির প্রমাণ।', author:'Coach রফিক'},
+  {text:'প্রতিটা দিন তোমার ফুসফুস নতুন করে জীবন পাচ্ছে।', author:'Dr. সারা'},
+  {text:'তোমার পরিবার তোমাকে ভালোবাসে। তাদের জন্য লড়াই করো।', author:'Coach রফিক'},
+  {text:'একটা সিগারেট নেওয়া মানে হার নয় — হার মানা ছেড়ে দেওয়া।', author:'Dr. আরমান'},
+  {text:'তুমি যে টাকা বাঁচাচ্ছো সেটা দিয়ে স্বপ্ন পূরণ করো।', author:'Coach রফিক'},
+  {text:'তোমার জীবন প্রতিদিন দীর্ঘ হচ্ছে। সত্যিই।', author:'Dr. সারা'},
+];
+
+const CHALLENGES = [
+  [{t:'১০ মিনিট হাঁটো',p:20},{t:'৮ গ্লাস পানি পান করো',p:15},{t:'Smoke-free থাকো',p:50}],
+  [{t:'১৫ মিনিট ব্যায়াম করো',p:25},{t:'জার্নালে লেখো',p:15},{t:'৩ বার শ্বাস-ব্যায়াম করো',p:20}],
+  [{t:'একজন বন্ধুকে ফোন করো',p:10},{t:'ফল বা সবজি খাও',p:10},{t:'রাত ১০টার আগে ঘুমাও',p:20}],
+  [{t:'Meditation ৫ মিনিট করো',p:20},{t:'পড়াশোনা ২ ঘণ্টা করো',p:25},{t:'নো স্ক্রিন — ১ ঘণ্টা',p:20}],
+  [{t:'নতুন একটা skill শেখো',p:30},{t:'Exercise করো',p:25},{t:'Craving diary লেখো',p:15}],
+];
+
+const HABITS = [
+  {id:'h1',icon:'📚',name:'Study / Work'},
+  {id:'h2',icon:'🏃',name:'Exercise'},
+  {id:'h3',icon:'🧘',name:'Meditation'},
+  {id:'h4',icon:'🚭',name:'Smoke-free'},
+  {id:'h5',icon:'📖',name:'Reading'},
+];
+
+const BUYS = [
+  {icon:'📱',name:'স্মার্টফোন',price:15000},
+  {icon:'✈️',name:'কক্সবাজার ট্রিপ',price:8000},
+  {icon:'📚',name:'IELTS কোর্স',price:20000},
+  {icon:'💻',name:'ল্যাপটপ',price:50000},
+  {icon:'🎁',name:'পরিবারকে উপহার',price:5000},
+];
+
+const MOODS = ['😊','😤','😰','😔','💪','🥱'];
+
+const COMMUNITY_SEEDS = [
+  {name:'রাফি', days:45, text:'৪৫ দিন হয়ে গেছে! তোমরাও পারবে।'},
+  {name:'সুমাইয়া', days:12, text:'প্রথম ২ সপ্তাহ কঠিন ছিল, এখন অনেক ভালো।'},
+  {name:'তানভীর', days:90, text:'৩ মাস! ফুসফুস সত্যিই ভালো হয়েছে।'},
+];
+
+const DAY_NAMES = ['রবি','সোম','মঙ্গল','বুধ','বৃহ','শুক্র','শনি'];
+
+/* ══════════════════════════════════════
+   ONBOARDING
+══════════════════════════════════════ */
+function obNext(step) {
+  if (step === 0) {
+    if (!document.getElementById('inp-name').value.trim()) { alert('নাম দাও!'); return; }
+    if (!document.getElementById('inp-quit').value) { alert('সময় দাও!'); return; }
+  }
+  document.getElementById('ob-step-' + step).classList.remove('active');
+  document.getElementById('ob-step-' + (step+1)).classList.add('active');
+  document.getElementById('od' + step).classList.remove('active');
+  document.getElementById('od' + (step+1)).classList.add('active');
+}
+function obBack(step) {
+  document.getElementById('ob-step-' + step).classList.remove('active');
+  document.getElementById('ob-step-' + (step-1)).classList.add('active');
+}
+
+async function launchApp() {
+  const name = currentUser?.displayName || document.getElementById('inp-name').value.trim();
+  U = {
+    name,
+    uid: currentUser?.uid,
+    email: currentUser?.email,
+    quitTime: new Date(document.getElementById('inp-quit').value).getTime(),
+    cpd: parseInt(document.getElementById('inp-cpd').value),
+    price: parseFloat(document.getElementById('inp-price').value) || 12,
+    years: parseInt(document.getElementById('inp-years').value),
+    reason: document.getElementById('inp-reason').value,
+    type: document.getElementById('inp-type').value,
+    points: 0,
+    badges: [],
+    cravingsWon: 0,
+    routineDone: {},
+    habitsDone: {},
+    journals: [],
+    community: [...COMMUNITY_SEEDS],
+    challengeDone: {},
+    relapseMode: false,
+    createdAt: Date.now(),
+  };
+
+  // Save to Firestore immediately
+  if (currentUser) {
+    setSyncStatus('syncing');
+    try {
+      await getUserDoc(currentUser.uid).set(U);
+      setSyncStatus('online');
+    } catch(e) {
+      console.error(e);
+      setSyncStatus('offline');
+    }
+  }
+  localStorage.setItem('nirvaan_v2', JSON.stringify(U));
+  initApp();
+}
+
+/* ══════════════════════════════════════
+   INIT APP
+══════════════════════════════════════ */
+function initApp() {
+  showScreen('app');
+  if (currentUser) updateUserUI(currentUser);
+
+  buildMilestones();
+  buildHealth();
+  buildRoutine();
+  buildHabits();
+  buildWeekGrid();
+  buildJournal();
+  buildDistractions();
+  buildMoods();
+  buildChallenges();
+  buildBadges();
+  buildBuyList();
+  buildCoachMessages();
+  buildProgDashboard();
+  loadCommunityPosts().then(posts => {
+    if (posts.length) { U.community = posts; buildCommunity(); }
+    else buildCommunity();
+  });
+
+  if (U.relapseMode) document.getElementById('relapse-bar').classList.add('show');
+  newMotivation();
+  startTimers();
+}
+
+/* ══════════════════════════════════════
+   TIMERS
+══════════════════════════════════════ */
+let msCount = 0;
+function startTimers() {
+  updateAll();
+  setInterval(updateAll, 1000);
+  setInterval(() => {
+    msCount = (msCount + 40) % 1000;
+    const pct = msCount / 10;
+    const mf = document.getElementById('ms-fill'); if(mf) mf.style.width = pct + '%';
+    const mv = document.getElementById('ms-val'); if(mv) mv.textContent = String(msCount).padStart(3,'0');
+  }, 40);
+}
+
+let prevVals = {};
+function setNum(id, val) {
+  const s = String(val).padStart(2,'0');
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (prevVals[id] !== s) {
+    el.textContent = s;
+    el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+    prevVals[id] = s;
+  }
+}
+
+function updateAll() {
+  const now = Date.now();
+  const el = now - U.quitTime;
+  if (!el || el < 0) return;
+
+  const totalS = Math.floor(el / 1000);
+  const y  = Math.floor(totalS / (365*86400));
+  const r1 = totalS % (365*86400);
+  const mo = Math.floor(r1 / (30*86400));
+  const r2 = r1 % (30*86400);
+  const d  = Math.floor(r2 / 86400);
+  const r3 = r2 % 86400;
+  const h  = Math.floor(r3 / 3600);
+  const m  = Math.floor((r3 % 3600) / 60);
+  const s  = r3 % 60;
+
+  setNum('t-y',y); setNum('t-mo',mo); setNum('t-d',d);
+  setNum('t-h',h); setNum('t-m',m);   setNum('t-s',s);
+
+  const totalDays = Math.floor(el / 86400000);
+  const sn = document.getElementById('streak-num'); if(sn) sn.textContent = totalDays;
+
+  const cigs  = Math.floor(el / 86400000 * U.cpd);
+  const money = cigs * U.price;
+  const lifem = cigs * 11;
+
+  const sc = document.getElementById('s-cigs');   if(sc)  sc.textContent = cigs.toLocaleString();
+  const sm = document.getElementById('s-money');  if(sm)  sm.textContent = '৳' + money.toFixed(0);
+  const lh = Math.floor(lifem/60);
+  const sl = document.getElementById('s-life');   if(sl)  sl.textContent = lh > 0 ? lh+'h' : lifem+'m';
+  const scr= document.getElementById('s-craving');if(scr) scr.textContent = U.cravingsWon || 0;
+
+  const cdn = document.getElementById('challenge-day-num'); if(cdn) cdn.textContent = 'Day ' + (totalDays + 1);
+
+  const mb = document.getElementById('money-big'); if(mb) mb.textContent = money.toFixed(0);
+  const md = document.getElementById('mb-day');    if(md) md.textContent = '৳' + Math.min(U.cpd * U.price, money).toFixed(0);
+  const mw = document.getElementById('mb-week');   if(mw) mw.textContent = '৳' + Math.min(7 * U.cpd * U.price, money).toFixed(0);
+  const my = document.getElementById('mb-year');   if(my) my.textContent = '৳' + (U.cpd * 365 * U.price).toFixed(0);
+
+  updateBuyList(money);
+  updateMilestoneProgress(el);
+  updateHealthItems(el);
+  updatePoints();
+  checkMilestoneCelebrations(el);
+}
+
+/* ══════════════════════════════════════
+   MILESTONES
+══════════════════════════════════════ */
+function buildMilestones() {
+  const list = document.getElementById('milestone-list');
+  if (!list) return;
+  list.innerHTML = '';
+  MILESTONES.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'ms-card'; div.id = 'mscard-' + m.id;
+    div.innerHTML = `<div class="ms-ico">${m.icon}</div>
+      <div class="ms-body">
+        <div class="ms-name">${m.name}</div>
+        <div class="ms-desc">${m.desc}</div>
+        <div class="ms-prog"><div class="ms-prog-fill" id="mspf-${m.id}" style="width:0%"></div></div>
+      </div>
+      <div class="ms-status waiting" id="msst-${m.id}">${m.pts}pts</div>`;
+    list.appendChild(div);
+  });
+}
+
+let celebratedSet = new Set();
+function updateMilestoneProgress(el) {
+  let unlocked = 0, nextDone = false;
+  MILESTONES.forEach(m => {
+    const card = document.getElementById('mscard-' + m.id);
+    const fill = document.getElementById('mspf-' + m.id);
+    const st   = document.getElementById('msst-' + m.id);
+    if (!card) return;
+    if (el >= m.ms) {
+      card.className = 'ms-card unlocked';
+      st.className = 'ms-status done'; st.textContent = '✓ অর্জিত';
+      if (fill) fill.style.width = '100%';
+      unlocked++;
+    } else if (!nextDone) {
+      nextDone = true;
+      card.className = 'ms-card next-ms';
+      st.className = 'ms-status next';
+      const pct = Math.min(100, (el / m.ms) * 100);
+      if (fill) fill.style.width = pct.toFixed(1) + '%';
+      const rem = Math.floor((m.ms - el) / 1000);
+      const rh  = Math.floor(rem/3600), rm = Math.floor((rem%3600)/60);
+      st.textContent = rh > 0 ? rh+'ঘ '+rm+'মি' : rm+'মি';
+    } else {
+      card.className = 'ms-card';
+      st.className = 'ms-status waiting'; st.textContent = m.pts + 'pts';
+      if (fill) fill.style.width = '0%';
+    }
+  });
+  const badge = document.getElementById('ms-count-badge');
+  if (badge) badge.textContent = unlocked + ' অর্জিত';
+}
+
+function checkMilestoneCelebrations(el) {
+  MILESTONES.forEach(m => {
+    if (el >= m.ms && !celebratedSet.has(m.id)) {
+      const key = 'cel_' + m.id + '_' + (currentUser?.uid || 'local');
+      if (!localStorage.getItem(key)) {
+        celebratedSet.add(m.id);
+        localStorage.setItem(key, '1');
+        // Log milestone achievement to Firestore
+        if (currentUser) {
+          db.collection('users').doc(currentUser.uid)
+            .collection('milestones').doc(m.id)
+            .set({ achievedAt: firebase.firestore.FieldValue.serverTimestamp(), pts: m.pts })
+            .catch(console.error);
+        }
+        setTimeout(() => showCelebration(m), 600);
+        addPoints(m.pts);
+      } else celebratedSet.add(m.id);
+    }
+  });
+}
+
+/* ══════════════════════════════════════
+   HEALTH
+══════════════════════════════════════ */
+function buildHealth() {
+  const list = document.getElementById('health-items');
+  if (!list) return;
+  list.innerHTML = '';
+  HEALTH.forEach((h, i) => {
+    const div = document.createElement('div');
+    div.className = 'health-row'; div.id = 'hr-' + i;
+    div.innerHTML = `<div class="health-dot">✓</div>
+      <div class="health-body">
+        <div class="health-time">${h.t} পরে</div>
+        <div class="health-title">${h.title}</div>
+        <div class="health-desc">${h.desc}</div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function updateHealthItems(el) {
+  HEALTH.forEach((h, i) => {
+    const row = document.getElementById('hr-' + i);
+    if (row) row.className = 'health-row' + (el >= h.ms ? ' healed' : '');
+  });
+}
+
+/* ══════════════════════════════════════
+   ROUTINE
+══════════════════════════════════════ */
+const ROUTINES = {
+  student: {
+    '🌅 সকাল': [{t:'৬:০০',n:'ঘুম থেকে উঠে পানি পান',pts:5},{t:'৬:৩০',n:'ব্যায়াম / হাঁটা',pts:20},{t:'৭:৩০',n:'স্বাস্থ্যকর নাস্তা',pts:10},{t:'৮:০০',n:'পড়াশোনা শুরু (Pomodoro)',pts:25}],
+    '☀️ দুপুর': [{t:'১২:০০',n:'খাবার ও বিশ্রাম',pts:5},{t:'১:০০',n:'Revision করো',pts:20},{t:'৩:০০',n:'পানি পান (২ গ্লাস)',pts:5},{t:'৪:০০',n:'Practice test',pts:25}],
+    '🌙 রাত':   [{t:'৭:০০',n:'হালকা রাতের খাবার',pts:5},{t:'৮:০০',n:'Reading / নোট রিভিশন',pts:15},{t:'৯:৩০',n:'Meditation বা breathing',pts:20},{t:'১০:৩০',n:'ঘুমের প্রস্তুতি',pts:5}],
+  },
+  coder: {
+    '🌅 সকাল': [{t:'৭:০০',n:'ঘুম থেকে উঠো',pts:5},{t:'৭:৩০',n:'হাঁটা বা ব্যায়াম',pts:20},{t:'৮:৩০',n:'DSA / Algorithm practice',pts:30},{t:'১০:০০',n:'Project কাজ শুরু',pts:25}],
+    '☀️ দুপুর': [{t:'১:০০',n:'খাবার ও ছোট বিরতি',pts:5},{t:'২:০০',n:'Code review / debugging',pts:25},{t:'৪:০০',n:'নতুন technology শেখো',pts:20},{t:'৫:৩০',n:'Docs / Stack Overflow',pts:10}],
+    '🌙 রাত':   [{t:'৮:০০',n:'Side project বা contribution',pts:20},{t:'৯:৩০',n:'Tech blog পড়ো',pts:10},{t:'১০:৩০',n:'Screen off, বই পড়ো',pts:15},{t:'১১:০০',n:'ঘুমাও',pts:5}],
+  },
+  default: {
+    '🌅 সকাল': [{t:'৬:৩০',n:'ঘুম থেকে উঠে পানি',pts:5},{t:'৭:০০',n:'ব্যায়াম করো',pts:20},{t:'৭:৪৫',n:'নাস্তা ও প্রস্তুতি',pts:10},{t:'৮:৩০',n:'দিনের পরিকল্পনা লেখো',pts:10}],
+    '☀️ দুপুর': [{t:'১২:৩০',n:'স্বাস্থ্যকর দুপুরের খাবার',pts:10},{t:'১:৩০',n:'১০ মিনিট হাঁটো',pts:15},{t:'৩:০০',n:'পানি পান করো',pts:5},{t:'৪:৩০',n:'Skill development',pts:20}],
+    '🌙 রাত':   [{t:'৭:৩০',n:'হালকা রাতের খাবার',pts:10},{t:'৯:০০',n:'বই বা podcast',pts:15},{t:'১০:০০',n:'জার্নালে লেখো',pts:10},{t:'১১:০০',n:'ঘুমানোর প্রস্তুতি',pts:5}],
+  },
+};
+
+function buildRoutine() {
+  const type = U.type || 'default';
+  const data = ROUTINES[type] || ROUTINES.default;
+  const cont = document.getElementById('routine-sections');
+  if (!cont) return;
+  cont.innerHTML = '';
+  const today = new Date().toDateString();
+  Object.entries(data).forEach(([period, slots]) => {
+    const block = document.createElement('div');
+    block.className = 'routine-block';
+    let done = 0;
+    slots.forEach((_,i) => { if (U.routineDone[`${today}_${period}_${i}`]) done++; });
+    block.innerHTML = `
+      <div class="routine-block-header" onclick="toggleBlock(this)">
+        <div class="routine-block-title"><span>${period}</span></div>
+        <div class="routine-block-prog" id="rp-${period.replace(/\s/g,'_')}">${done}/${slots.length}</div>
+      </div>
+      <div class="routine-slots" id="rs-${period.replace(/\s/g,'_')}">
+        ${slots.map((s,i) => {
+          const key = `${today}_${period}_${i}`;
+          const isDone = U.routineDone[key];
+          return `<div class="slot-row${isDone?' done':''}" onclick="toggleSlot('${key}','${period}',${i},${s.pts},this)">
+            <div class="slot-check">${isDone?'✓':''}</div>
+            <div class="slot-time">${s.t}</div>
+            <div class="slot-name">${s.n}</div>
+            <div class="slot-pts">+${s.pts}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    cont.appendChild(block);
+  });
+}
+
+function toggleBlock(header) {
+  const slots = header.nextElementSibling;
+  slots.style.display = slots.style.display === 'none' ? '' : 'none';
+}
+
+function toggleSlot(key, period, idx, pts, el) {
+  const wasDone = U.routineDone[key];
+  U.routineDone[key] = !wasDone;
+  saveU();
+  if (!wasDone) { el.classList.add('done'); el.querySelector('.slot-check').textContent = '✓'; addPoints(pts); showToast('+'+pts+' পয়েন্ট! ☁️'); }
+  else { el.classList.remove('done'); el.querySelector('.slot-check').textContent = ''; }
+  const today = new Date().toDateString();
+  const type = U.type || 'default';
+  const data = ROUTINES[type] || ROUTINES.default;
+  const slots = data[period];
+  if (slots) {
+    let done = 0;
+    slots.forEach((_,i) => { if (U.routineDone[`${today}_${period}_${i}`]) done++; });
+    const prog = document.getElementById('rp-' + period.replace(/\s/g,'_'));
+    if (prog) prog.textContent = done + '/' + slots.length;
+  }
+}
+
+/* ══════════════════════════════════════
+   HABITS
+══════════════════════════════════════ */
+function buildHabits() {
+  const grid = document.getElementById('habit-grid');
+  if (!grid) return;
+  const today = new Date().toDateString();
+  grid.innerHTML = '';
+  HABITS.forEach(h => {
+    const done = U.habitsDone[`${today}_${h.id}`];
+    const streak = calcStreak(h.id);
+    const div = document.createElement('div');
+    div.className = 'habit-row' + (done ? ' checked' : '');
+    div.id = 'hab-' + h.id;
+    div.onclick = () => toggleHabit(h.id, div);
+    div.innerHTML = `<div class="habit-check">${done ? '✓' : ''}</div>
+      <div class="habit-icon">${h.icon}</div>
+      <div class="habit-name">${h.name}</div>
+      <div class="habit-streak">🔥 ${streak}d</div>`;
+    grid.appendChild(div);
+  });
+  updateHabitBadge();
+}
+
+function toggleHabit(id, el) {
+  const today = new Date().toDateString();
+  const key = `${today}_${id}`;
+  const wasDone = U.habitsDone[key];
+  U.habitsDone[key] = !wasDone;
+  saveU();
+  if (!wasDone) { el.classList.add('checked'); el.querySelector('.habit-check').textContent = '✓'; addPoints(10); showToast('+10 পয়েন্ট! ☁️'); }
+  else { el.classList.remove('checked'); el.querySelector('.habit-check').textContent = ''; }
+  updateHabitBadge();
+}
+
+function updateHabitBadge() {
+  const today = new Date().toDateString();
+  let done = 0;
+  HABITS.forEach(h => { if (U.habitsDone[`${today}_${h.id}`]) done++; });
+  const b = document.getElementById('habit-badge'); if(b) b.textContent = done + '/' + HABITS.length;
+}
+
+function calcStreak(hid) {
+  let streak = 0, d = new Date();
+  for (let i = 0; i < 30; i++) {
+    if (U.habitsDone[d.toDateString() + '_' + hid]) streak++;
+    else if (i > 0) break;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+function buildWeekGrid() {
+  const grid = document.getElementById('week-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dayStr = d.toDateString();
+    const div = document.createElement('div');
+    div.className = 'week-day';
+    div.innerHTML = `<div class="week-day-label">${DAY_NAMES[d.getDay()]}</div>
+      <div class="week-day-dots">${HABITS.map(h => `<div class="w-dot${U.habitsDone[`${dayStr}_${h.id}`]?' done':''}"></div>`).join('')}</div>`;
+    grid.appendChild(div);
+  }
+}
+
+/* ══════════════════════════════════════
+   CHALLENGES
+══════════════════════════════════════ */
+function buildChallenges() {
+  const today = new Date().toDateString();
+  const dayIdx = Math.floor((Date.now() - (U.quitTime||Date.now())) / 86400000) % CHALLENGES.length;
+  const ch = CHALLENGES[Math.max(0, dayIdx)];
+  const cont = document.getElementById('challenge-items');
+  if (!cont) return;
+  cont.innerHTML = '';
+  let done = 0;
+  ch.forEach((c, i) => {
+    const key = `${today}_ch_${i}`;
+    const isDone = U.challengeDone[key];
+    if (isDone) done++;
+    const div = document.createElement('div');
+    div.className = 'ch-item' + (isDone ? ' done' : '');
+    div.onclick = () => toggleChallenge(key, div, c.p);
+    div.innerHTML = `<div class="ch-check">${isDone ? '✓' : ''}</div><div class="ch-text">${c.t}</div><div class="ch-pts">+${c.p}pts</div>`;
+    cont.appendChild(div);
+  });
+  const cb = document.getElementById('challenge-badge'); if(cb) cb.textContent = done + '/' + ch.length + ' সম্পন্ন';
+}
+
+function toggleChallenge(key, el, pts) {
+  const wasDone = U.challengeDone[key];
+  U.challengeDone[key] = !wasDone;
+  saveU();
+  if (!wasDone) { el.classList.add('done'); el.querySelector('.ch-check').textContent = '✓'; addPoints(pts); showToast('+'+pts+' পয়েন্ট! ☁️'); }
+  else { el.classList.remove('done'); el.querySelector('.ch-check').textContent = ''; }
+  const today = new Date().toDateString();
+  const dayIdx = Math.floor((Date.now() - U.quitTime) / 86400000) % CHALLENGES.length;
+  const ch = CHALLENGES[Math.max(0,dayIdx)];
+  let done = 0;
+  ch.forEach((_,i) => { if (U.challengeDone[`${today}_ch_${i}`]) done++; });
+  const cb = document.getElementById('challenge-badge'); if(cb) cb.textContent = done + '/' + ch.length + ' সম্পন্ন';
+}
+
+/* ══════════════════════════════════════
+   SOS / CRAVING
+══════════════════════════════════════ */
+function buildDistractions() {
+  const list = document.getElementById('distraction-list');
+  if (!list) return;
+  list.innerHTML = '';
+  DISTRACTIONS.forEach(d => {
+    const div = document.createElement('div');
+    div.className = 'distract-item';
+    div.innerHTML = `<div class="distract-icon">${d.icon}</div><div>${d.text}</div>`;
+    div.onclick = () => { addPoints(5); showToast('✅ করেছো! +5 পয়েন্ট'); };
+    list.appendChild(div);
+  });
+}
+
+function toggleSOS() {
+  document.getElementById('sos-panel').classList.toggle('open');
+}
+
+function sosSwitchTab(idx, btn) {
+  document.querySelectorAll('.sos-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sos-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sos-p' + idx).classList.add('active');
+}
+
+let breathTimer = null;
+function doBreath() {
+  if (breathTimer) return;
+  const ring  = document.getElementById('breath-ring');
+  const inner = document.getElementById('breath-inner');
+  const phase = document.getElementById('breath-phase');
+  const fill  = document.getElementById('breath-fill');
+  const phases = [
+    {label:'শ্বাস নাও', dur:4000, fillEnd:100, cls:'inhale'},
+    {label:'ধরো',       dur:7000, fillEnd:100, cls:''},
+    {label:'ছাড়ো',     dur:8000, fillEnd:0,   cls:'exhale'},
+  ];
+  let pi = 0;
+  function runPhase() {
+    if (pi >= phases.length) {
+      breathTimer = null;
+      inner.textContent = 'আবার'; phase.textContent = '✅ দারুণ!';
+      ring.className = 'breath-ring';
+      addPoints(5); return;
+    }
+    const p = phases[pi];
+    ring.className = 'breath-ring ' + p.cls;
+    inner.textContent = p.label; phase.textContent = p.label + '...';
+    if(fill){ fill.style.transition = `width ${p.dur}ms linear`; fill.style.width = p.fillEnd + '%'; }
+    breathTimer = setTimeout(() => { pi++; breathTimer = null; runPhase(); }, p.dur);
+  }
+  runPhase();
+}
+
+function logCraving(won) {
+  if (won) {
+    U.cravingsWon = (U.cravingsWon || 0) + 1;
+    addPoints(25);
+    showToast('💪 Craving জিতেছো! +25 পয়েন্ট');
+    // Log craving to Firestore
+    if (currentUser) {
+      db.collection('users').doc(currentUser.uid)
+        .collection('cravings').add({
+          won: true,
+          at: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(console.error);
+    }
+  } else {
+    document.getElementById('relapse-bar').classList.add('show');
+    U.relapseMode = true;
+  }
+  const cc = document.getElementById('craving-count'); if(cc) cc.textContent = U.cravingsWon || 0;
+  saveU();
+}
+
+function dismissRelapse() { document.getElementById('relapse-bar').classList.remove('show'); }
+
+function restartTimer() {
+  U.quitTime = Date.now();
+  U.relapseMode = false;
+  MILESTONES.forEach(m => localStorage.removeItem('cel_' + m.id + '_' + (currentUser?.uid||'local')));
+  saveU();
+  document.getElementById('relapse-bar').classList.remove('show');
+  showToast('💪 নতুন যাত্রা শুরু! ☁️ Synced');
+}
+
+/* ══════════════════════════════════════
+   MOTIVATION
+══════════════════════════════════════ */
+let mIdx = 0;
+function newMotivation() {
+  mIdx = (mIdx + 1) % MOTIVATIONS.length;
+  const m = MOTIVATIONS[mIdx];
+  const mt = document.getElementById('motive-text'); if(mt) mt.textContent = m.text;
+  const ma = document.getElementById('motive-author'); if(ma) ma.textContent = '— ' + m.author;
+}
+
+/* ══════════════════════════════════════
+   COACH MESSAGES
+══════════════════════════════════════ */
+const COACH_MSGS = [
+  {avatar:'🧠',name:'Dr. আরমান',role:'মনোবিজ্ঞানী',msg:(el)=>{
+    if(el<86400000) return 'প্রতিটা craving মাত্র ৩-৫ মিনিট থাকে। সেটুকু পার করলেই তুমি জিতবে।';
+    if(el<604800000) return 'প্রথম সপ্তাহ সবচেয়ে কঠিন। Dopamine system আবার স্বাভাবিক হচ্ছে।';
+    return 'তোমার neural pathways পরিবর্তন হয়েছে। নতুন স্বাস্থ্যকর অভ্যাস গড়ে উঠছে।';
+  }},
+  {avatar:'💪',name:'Coach রফিক',role:'মোটিভেটর',msg:(el)=>{
+    if(el<86400000) return 'শুরুর দিনগুলো কঠিন, কিন্তু প্রতিটা মুহূর্ত তোমাকে শক্তিশালী করছে!';
+    if(el<604800000) return 'তুমি প্রতিদিন একটা যুদ্ধ জিতছো। এই consistency-ই তোমাকে Legend বানাবে।';
+    return 'তুমি এখন অনেকের অনুপ্রেরণা। তোমার journey অন্যদের সাহস দিচ্ছে।';
+  }},
+  {avatar:'❤️',name:'Dr. সারা',role:'স্বাস্থ্য বিশেষজ্ঞ',msg:(el)=>{
+    if(el<86400000) return 'তোমার শরীর ইতোমধ্যে সারতে শুরু করেছে। প্রচুর পানি পান করো।';
+    if(el<604800000) return 'ফুসফুসের cilia আবার কাজ শুরু করেছে। শ্বাসতন্ত্র পরিষ্কার হচ্ছে।';
+    return 'তোমার হৃদয় আগের চেয়ে অনেক সুস্থ। হৃদরোগের ঝুঁকি কমছে প্রতিদিন।';
+  }},
+];
+
+function buildCoachMessages() {
+  const el = Date.now() - (U.quitTime || Date.now());
+  const cont = document.getElementById('coach-messages-home');
+  if (!cont) return;
+  cont.innerHTML = '';
+  COACH_MSGS.forEach(c => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;gap:12px;margin-bottom:10px;';
+    div.innerHTML = `<div style="font-size:28px;flex-shrink:0">${c.avatar}</div>
+      <div><div style="font-size:0.7rem;font-weight:700;color:var(--gold);margin-bottom:2px">${c.name} · ${c.role}</div>
+      <div style="font-size:0.82rem;line-height:1.6;color:var(--white)">${c.msg(el)}</div></div>`;
+    cont.appendChild(div);
+  });
+}
+
+/* ══════════════════════════════════════
+   POINTS & BADGES
+══════════════════════════════════════ */
+function addPoints(p) {
+  U.points = (U.points || 0) + p;
+  saveU();
+  updatePoints();
+}
+
+function updatePoints() {
+  const pts = U.points || 0;
+  let level = LEVELS[0], next = LEVELS[1];
+  for (let i = 0; i < LEVELS.length; i++) {
+    if (pts >= LEVELS[i].pts) { level = LEVELS[i]; next = LEVELS[i+1] || LEVELS[LEVELS.length-1]; }
+  }
+  const nlb = document.getElementById('nav-level-badge'); if(nlb) nlb.textContent = level.name;
+  const ln  = document.getElementById('level-name');      if(ln)  ln.textContent  = level.name;
+  const cp  = document.getElementById('curr-pts');        if(cp)  cp.textContent  = pts;
+  const np  = document.getElementById('next-pts');        if(np)  np.textContent  = next.pts;
+  const nn  = document.getElementById('next-lvl-name');   if(nn)  nn.textContent  = next.name;
+  const pct = next.pts > level.pts ? Math.min(100,((pts-level.pts)/(next.pts-level.pts))*100) : 100;
+  const lf  = document.getElementById('level-fill');      if(lf)  lf.style.width  = pct + '%';
+}
+
+function buildBadges() {
+  const grid = document.getElementById('badges-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  BADGES.forEach(b => {
+    const earned = U.badges && U.badges.includes(b.id);
+    const div = document.createElement('div');
+    div.className = 'badge-item ' + (earned ? 'earned' : 'locked');
+    div.innerHTML = `<div class="badge-icon">${b.icon}</div><div class="badge-name">${b.name}</div><div class="badge-pts">${b.pts}p</div>`;
+    grid.appendChild(div);
+  });
+}
+
+/* ══════════════════════════════════════
+   MONEY
+══════════════════════════════════════ */
+function buildBuyList() {
+  const list = document.getElementById('buy-list');
+  if (!list) return;
+  list.innerHTML = '';
+  BUYS.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'buy-item';
+    div.id = 'buy-' + b.name.replace(/\s/g,'_');
+    div.innerHTML = `<div class="buy-icon">${b.icon}</div>
+      <div class="buy-info"><div class="buy-name">${b.name}</div><div class="buy-price">৳${b.price.toLocaleString()}</div></div>
+      <div class="buy-status cant" id="bs-${b.name.replace(/\s/g,'_')}">সঞ্চয় করো</div>`;
+    list.appendChild(div);
+  });
+}
+function updateBuyList(money) {
+  BUYS.forEach(b => {
+    const el = document.getElementById('bs-' + b.name.replace(/\s/g,'_'));
+    if (!el) return;
+    if (money >= b.price) { el.className = 'buy-status can'; el.textContent = '✅ কিনতে পারবে!'; }
+    else { el.className = 'buy-status cant'; el.textContent = '৳'+(b.price-money).toFixed(0)+' বাকি'; }
+  });
+}
+
+/* ══════════════════════════════════════
+   JOURNAL — with Firestore sub-collection
+══════════════════════════════════════ */
+let selectedMood = MOODS[0];
+function buildMoods() {
+  const row = document.getElementById('mood-row');
+  if (!row) return;
+  row.innerHTML = '';
+  MOODS.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'mood-btn' + (m === selectedMood ? ' selected' : '');
+    btn.textContent = m;
+    btn.onclick = () => {
+      selectedMood = m;
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
+    row.appendChild(btn);
+  });
+}
+
+async function saveJournal() {
+  const text = document.getElementById('journal-input').value.trim();
+  if (!text) { alert('কিছু লেখো!'); return; }
+  const entry = {
+    mood: selectedMood, text,
+    date: new Date().toLocaleDateString('bn-BD', {year:'numeric',month:'long',day:'numeric'}),
+    time: new Date().toLocaleTimeString('bn-BD', {hour:'2-digit',minute:'2-digit'}),
+  };
+  if (!U.journals) U.journals = [];
+  U.journals.unshift(entry);
+  saveU();
+
+  // Also save to Firestore sub-collection
+  await saveJournalToFS(entry);
+
+  document.getElementById('journal-input').value = '';
+  addPoints(15);
+  buildJournal();
+  showToast('📓 জার্নাল সেভ হয়েছে! ☁️ Synced');
+}
+
+function buildJournal() {
+  const feed = document.getElementById('journal-feed');
+  if (!feed) return;
+  feed.innerHTML = '';
+  if (!U.journals || !U.journals.length) {
+    feed.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:0.82rem;padding:20px">এখনো কোনো এন্ট্রি নেই</div>';
+    return;
+  }
+  U.journals.slice(0,10).forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'journal-entry';
+    div.innerHTML = `<div class="je-header"><div class="je-mood">${e.mood}</div><div class="je-date">${e.date} · ${e.time}</div></div><div class="je-text">${e.text}</div>`;
+    feed.appendChild(div);
+  });
+}
+
+/* ══════════════════════════════════════
+   COMMUNITY — Real Firestore
+══════════════════════════════════════ */
+function buildCommunity() {
+  const feed = document.getElementById('community-feed');
+  if (!feed) return;
+  feed.innerHTML = '';
+  const posts = U.community || COMMUNITY_SEEDS;
+  posts.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'community-post';
+    div.innerHTML = `<div class="cp-header">
+        <div class="cp-avatar">${(p.name||'?')[0].toUpperCase()}</div>
+        <div><div class="cp-name">${p.name || 'Anonymous'}</div><div class="cp-days">🔥 ${p.days || 0} দিন</div></div>
+      </div>
+      <div class="cp-text">${p.text}</div>
+      <div class="cp-like" onclick="likePost(this,'${p.id||''}')">❤️ ${p.likes||Math.floor(Math.random()*15+3)}</div>`;
+    feed.appendChild(div);
+  });
+}
+
+async function likePost(el, postId) {
+  const current = parseInt(el.textContent.replace(/\D/g,'')) || 0;
+  el.textContent = '❤️ ' + (current + 1);
+  if (postId && currentUser) {
+    try {
+      await db.collection('community').doc(postId).update({
+        likes: firebase.firestore.FieldValue.increment(1)
+      });
+    } catch(e) {}
+  }
+}
+
+async function postCommunity() {
+  const text = document.getElementById('community-input').value.trim();
+  if (!text) return;
+  const days = Math.floor((Date.now() - U.quitTime) / 86400000);
+  const post = { name: U.name, days, text, uid: currentUser?.uid || 'anon', likes: 0 };
+  if (!U.community) U.community = [];
+  U.community.unshift(post);
+  saveU();
+  document.getElementById('community-input').value = '';
+  // Save to Firestore
+  await saveCommunityPost(post);
+  buildCommunity();
+  addPoints(10);
+  showToast('📢 পোস্ট হয়েছে! ☁️ Synced +10pts');
+}
+
+/* ══════════════════════════════════════
+   PROGRESS DASHBOARD
+══════════════════════════════════════ */
+function buildProgDashboard() {
+  const cont = document.getElementById('prog-dashboard');
+  if (!cont) return;
+  cont.innerHTML = `
+    <div class="prog-card"><div class="prog-label">Smoke-free Days</div><div class="prog-val green" id="pd-days">0</div><div class="prog-sub">টানা দিন</div></div>
+    <div class="prog-card"><div class="prog-label">টাকা বাঁচানো</div><div class="prog-val gold" id="pd-money">৳0</div><div class="prog-sub">মোট সঞ্চয়</div></div>
+    <div class="prog-card"><div class="prog-label">সিগারেট এড়ানো</div><div class="prog-val" id="pd-cigs">0</div><div class="prog-sub">টি সিগারেট</div></div>
+    <div class="prog-card"><div class="prog-label">Craving জিতেছি</div><div class="prog-val green" id="pd-craving">0</div><div class="prog-sub">টি craving</div></div>
+  `;
+  setInterval(() => {
+    const el = Date.now() - (U.quitTime || Date.now());
+    const days = Math.floor(el/86400000);
+    const cigs = Math.floor(el/86400000 * (U.cpd||10));
+    const money = cigs * (U.price||12);
+    const d = document.getElementById('pd-days');    if(d) d.textContent = days;
+    const m = document.getElementById('pd-money');   if(m) m.textContent = '৳'+money.toFixed(0);
+    const c = document.getElementById('pd-cigs');    if(c) c.textContent = cigs;
+    const cr= document.getElementById('pd-craving'); if(cr) cr.textContent = U.cravingsWon||0;
+  }, 2000);
+}
+
+/* ══════════════════════════════════════
+   CELEBRATION
+══════════════════════════════════════ */
+function showCelebration(m) {
+  document.getElementById('cel-emoji').textContent = m.icon;
+  document.getElementById('cel-badge').textContent = 'MILESTONE UNLOCKED';
+  document.getElementById('cel-title').textContent = m.name + ' অর্জন!';
+  document.getElementById('cel-msg').textContent = m.desc;
+  document.getElementById('cel-pts').textContent = '+' + m.pts + ' পয়েন্ট!';
+  const wrap = document.getElementById('confetti-wrap');
+  wrap.innerHTML = '';
+  const colors = ['#D4AF37','#f0d060','#00E676','#40C4FF','#FF5252','#EA80FC'];
+  for (let i = 0; i < 25; i++) {
+    const c = document.createElement('div'); c.className = 'cf';
+    c.style.cssText = `left:${Math.random()*100}%;background:${colors[i%colors.length]};animation-delay:${Math.random()*2}s;animation-duration:${1.8+Math.random()*2}s;transform:rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(c);
+  }
+  document.getElementById('celebration').classList.add('show');
+}
+function closeCel() {
+  document.getElementById('celebration').classList.remove('show');
+  document.getElementById('confetti-wrap').innerHTML = '';
+}
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+function showPage(name, navItem) {
+  document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (navItem) navItem.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (name === 'routine') { buildRoutine(); buildHabits(); buildWeekGrid(); }
+  if (name === 'milestone') { buildBadges(); }
+  if (name === 'journal') { buildJournal(); buildCommunity(); }
+}
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+</script>
+
+</body>
+</html>
